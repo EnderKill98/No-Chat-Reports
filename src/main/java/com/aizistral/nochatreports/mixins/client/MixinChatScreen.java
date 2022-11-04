@@ -62,22 +62,16 @@ public abstract class MixinChatScreen extends Screen {
 
 	@Inject(method = "normalizeChatMessage", at = @At("RETURN"), cancellable = true)
 	public void onBeforeMessage(String original, CallbackInfoReturnable<String> info) {
-		final String[] message = {
-				info.getReturnValue()
-		};
-		NCRConfig.getEncryption().setLastMessage(message[0]);
+		final String message = info.getReturnValue();
+		NCRConfig.getEncryption().setLastMessage(message);
 
-		if (!ServerSafetyState.allowChatSigning() && !ServerSafetyState.isDetermined()) {
-			ServerSafetyState.updateCurrent(ServerSafetyLevel.UNINTRUSIVE); // asume unintrusive until further notice
-		}
-
-		if (!message[0].isEmpty() && !Screen.hasControlDown() && NCRConfig.getEncryption().shouldEncrypt(message[0])) {
+		if (!message.isEmpty() && !Screen.hasControlDown() && NCRConfig.getEncryption().shouldEncrypt(message)) {
 			NCRConfig.getEncryption().getEncryptor().ifPresent(e -> {
 				// replace & color codes with § when it has letter or number after it
-				message[0] = colorCodes(message[0]);
-				int index = NCRConfig.getEncryption().getEncryptionStartIndex(message[0]);
-				String noencrypt = message[0].substring(0, index);
-				String encrypt = message[0].substring(index);
+				message = colorCodes(message);
+				int index = NCRConfig.getEncryption().getEncryptionStartIndex(message);
+				String noencrypt = message.substring(0, index);
+				String encrypt = message.substring(index);
 
 				if (encrypt.length() > 0) {
 					info.setReturnValue(noencrypt + e.encrypt("#%" + encrypt));
