@@ -44,7 +44,7 @@
 | \n        | New line        |
 | \r        | Carriage return |
 
-**Current Version:** 22w44a-v1.14.3
+**Current Version:** 22w44a-v1.14.4
 
 **Minecraft Version:** 22w44a
 
