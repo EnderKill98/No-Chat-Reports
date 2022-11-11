@@ -1,30 +1,17 @@
 package com.aizistral.nochatreports.encryption;
 
-import static com.aizistral.nochatreports.encryption.Encryption.BASE64_DECODER;
-import static com.aizistral.nochatreports.encryption.Encryption.BASE64_ENCODER;
-import static javax.crypto.Cipher.DECRYPT_MODE;
-import static javax.crypto.Cipher.ENCRYPT_MODE;
+import net.minecraft.util.Tuple;
 
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Random;
 
-import javax.annotation.Nullable;
-import javax.crypto.AEADBadTagException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
-import net.minecraft.SharedConstants;
-import net.minecraft.util.Tuple;
+import static javax.crypto.Cipher.DECRYPT_MODE;
+import static javax.crypto.Cipher.ENCRYPT_MODE;
 
 public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T> {
 	private final T encryption;
@@ -79,14 +66,14 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 
 				if (this.encryption.getEncapsulation().equalsIgnoreCase("Base64")) {
 					return encodeBase64(ByteBuffer.allocate(encrypted.length + tuple.getB().length).put(tuple.getB())
-					.put(encrypted).array());
+							.put(encrypted).array());
 
 				} else if (this.encryption.getEncapsulation().equalsIgnoreCase("Base64R")) {
 					return encodeBase64R(ByteBuffer.allocate(encrypted.length + tuple.getB().length).put(tuple.getB())
-					.put(encrypted).array());
+							.put(encrypted).array());
 				} else if (this.encryption.getEncapsulation().equalsIgnoreCase("Sus16")) {
 					return encodeSus16(ByteBuffer.allocate(encrypted.length + tuple.getB().length).put(tuple.getB())
-					.put(encrypted).array());
+							.put(encrypted).array());
 				} else {
 					throw new RuntimeException("Unknown Encapsulation: " + this.encryption.getEncapsulation());
 				}
@@ -101,7 +88,8 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 					throw new RuntimeException("Unknown Encapsulation: " + this.encryption.getEncapsulation());
 				}
 			}
-		} catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException | InvalidAlgorithmParameterException ex) {
+		} catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException
+				| InvalidAlgorithmParameterException ex) {
 			throw new RuntimeException(ex);
 		}
 	}
@@ -114,14 +102,16 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 		try {
 			candidate = internalRawDecrypt(decodeBase64RBytes(message));
 		} catch (RuntimeException ex) {
-			if(firstEx == null) firstEx = ex;
+			if (firstEx == null)
+				firstEx = ex;
 		}
 		// If failed, attempt Base64 (old version)
 		if (candidate == null || !candidate.startsWith("#%")) {
 			try {
 				candidate = internalRawDecrypt(decodeBase64NonRBytes(message));
 			} catch (RuntimeException ex) {
-				if(firstEx == null) firstEx = ex;
+				if (firstEx == null)
+					firstEx = ex;
 			}
 		}
 		// If also failed, attempt Sus16
@@ -129,10 +119,11 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 			try {
 				candidate = internalRawDecrypt(decodeSus16Bytes(message));
 			} catch (RuntimeException ex) {
-				if(firstEx == null) firstEx = ex;
+				if (firstEx == null)
+					firstEx = ex;
 			}
 		}
-		if(candidate == null && firstEx != null) {
+		if (candidate == null && firstEx != null) {
 			throw firstEx;
 		}
 		return candidate;
@@ -149,7 +140,8 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 				return fromBytes(this.decryptor.doFinal(message));
 		} catch (AEADBadTagException ex) {
 			return "???";
-		} catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException | InvalidAlgorithmParameterException ex) {
+		} catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException
+				| InvalidAlgorithmParameterException ex) {
 			throw new RuntimeException(ex);
 		}
 	}
@@ -166,6 +158,7 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 
 	protected abstract Tuple<AlgorithmParameterSpec, byte[]> generateIV() throws UnsupportedOperationException;
 
-	protected abstract Tuple<AlgorithmParameterSpec, byte[]> splitIV(byte[] message) throws UnsupportedOperationException;
+	protected abstract Tuple<AlgorithmParameterSpec, byte[]> splitIV(byte[] message)
+			throws UnsupportedOperationException;
 
 }
