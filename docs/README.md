@@ -44,7 +44,7 @@
 | \n        | New line        |
 | \r        | Carriage return |
 
-**Current Version:** 1.19.3-v1.18.0
+**Current Version:** 1.19.3-v1.19.0
 
 **Minecraft Version:** 1.19.3
 
