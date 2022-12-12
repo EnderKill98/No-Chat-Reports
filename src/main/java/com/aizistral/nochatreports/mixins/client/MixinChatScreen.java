@@ -113,13 +113,15 @@ public abstract class MixinChatScreen extends Screen {
 					}, Component.empty(), this);
 			this.safetyStatusButton.setTooltip(new AdvancedTooltip(() -> {
 				MutableComponent tooltip = this.getSafetyLevel().getTooltip();
-				ServerAddress address = ServerSafetyState.getLastServer();
-				SigningMode mode = NCRConfig.getServerPreferences().getModeUnresolved(address);
-				String signing = "gui.nochatreports.signing_status.";
 
 				if (ServerSafetyState.allowChatSigning()) {
 					tooltip = Component.translatable("gui.nochatreports.safety_status.insecure_signing");
-				}
+				} else if (ServerSafetyState.isInSingleplayer())
+					return tooltip;
+
+				ServerAddress address = ServerSafetyState.getLastServer();
+				SigningMode mode = NCRConfig.getServerPreferences().getModeUnresolved(address);
+				String signing = "gui.nochatreports.signing_status.";
 
 				if (!this.minecraft.getConnection().getConnection().isEncrypted()) {
 					signing += "disabled_offline";
@@ -195,7 +197,7 @@ public abstract class MixinChatScreen extends Screen {
 	}
 
 	private ServerSafetyLevel getSafetyLevel() {
-		return this.minecraft.isLocalServer() ? ServerSafetyLevel.SECURE : ServerSafetyState.getCurrent();
+		return ServerSafetyState.getCurrent();
 	}
 
 	private int getXOffset() {
@@ -204,12 +206,12 @@ public abstract class MixinChatScreen extends Screen {
 
 	private int getXOffset(ServerSafetyLevel level) {
 		return switch (level) {
-			case SECURE -> 21;
-			case UNINTRUSIVE -> 42;
-			case INSECURE -> 0;
-			case REALMS -> 63;
-			case UNKNOWN -> 84;
-			case UNDEFINED -> 105;
+		case SECURE, SINGLEPLAYER -> 21;
+		case UNINTRUSIVE -> 42;
+		case INSECURE -> 0;
+		case REALMS -> 63;
+		case UNKNOWN -> 84;
+		case UNDEFINED -> 105;
 		};
 	}
 
@@ -256,7 +258,6 @@ public abstract class MixinChatScreen extends Screen {
 			case "\\n" -> "\n";
 			case "\\r" -> "\r";
 			default -> character;
-		};
 	}
 
 	@Shadow
