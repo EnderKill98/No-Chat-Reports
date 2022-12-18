@@ -10,18 +10,39 @@ import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import org.jetbrains.annotations.Nullable;
 
 public class EncryptionUtil {
 
+	public record DetailedDecryptionInfo(Component decrypted, int keyIndex, @Nullable String encapsulation) {}
+
 	public static Optional<Component> tryDecrypt(Component component) {
 		// Try out all encryptors
+		int index = 0;
 		for(Encryptor<?> encryption : NCRConfig.getEncryption().getAllEncryptors()) {
 			Component copy = recreate(component);
-			ComponentContents contents = copy.getContents();
 
 			if(tryDecrypt(copy, encryption)) {
 				return Optional.of(copy);
 			}
+			index++;
+		}
+		return Optional.empty();
+	}
+
+	public static Optional<DetailedDecryptionInfo> tryDecryptDetailed(Component component) {
+		// Try out all encryptors
+		int index = 0;
+		for(Encryptor<?> encryption : NCRConfig.getEncryption().getAllEncryptors()) {
+			Component copy = recreate(component);
+
+			if(tryDecrypt(copy, encryption)) {
+				String encapsulation = null;
+				if(encryption instanceof AESEncryptor<?> aesEncryption)
+					encapsulation = aesEncryption.getDecryptLastUsedEncapsulation();
+				return Optional.of(new DetailedDecryptionInfo(copy, index, encapsulation));
+			}
+			index++;
 		}
 		return Optional.empty();
 	}
