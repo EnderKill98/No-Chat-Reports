@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base16;
+import com.aizistral.nochatreports.encryption.Encryption;
 
 public abstract class Encryption {
 	private static final List<Encryption> REGISTERED = new ArrayList<>();
