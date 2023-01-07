@@ -1,5 +1,8 @@
 package com.aizistral.nochatreports.common.mixins.client;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -71,10 +74,10 @@ public abstract class MixinChatScreen extends Screen {
 		if (!message.isEmpty() && !Screen.hasControlDown() && NCRConfig.getEncryption().shouldEncrypt(message)) {
 			NCRConfig.getEncryption().getEncryptor().ifPresent(e -> {
 				// replace & color codes with § when it has letter or number after it
-				message = colorCodes(message);
-				int index = NCRConfig.getEncryption().getEncryptionStartIndex(message);
-				String noencrypt = message.substring(0, index);
-				String encrypt = message.substring(index);
+				String newMessage = colorCodes(message);
+				int index = NCRConfig.getEncryption().getEncryptionStartIndex(newMessage);
+				String noencrypt = newMessage.substring(0, index);
+				String encrypt = newMessage.substring(index);
 
 				if (encrypt.length() > 0) {
 					info.setReturnValue(noencrypt + e.encrypt("#%" + encrypt));
@@ -200,12 +203,12 @@ public abstract class MixinChatScreen extends Screen {
 
 	private int getXOffset(ServerSafetyLevel level) {
 		return switch (level) {
-		case SECURE, SINGLEPLAYER -> 21;
-		case UNINTRUSIVE -> 42;
-		case INSECURE -> 0;
-		case REALMS -> 63;
-		case UNKNOWN -> 84;
-		case UNDEFINED -> 105;
+			case SECURE, SINGLEPLAYER -> 21;
+			case UNINTRUSIVE -> 42;
+			case INSECURE -> 0;
+			case REALMS -> 63;
+			case UNKNOWN -> 84;
+			case UNDEFINED -> 105;
 		};
 	}
 
@@ -252,6 +255,7 @@ public abstract class MixinChatScreen extends Screen {
 			case "\\n" -> "\n";
 			case "\\r" -> "\r";
 			default -> character;
+		};
 	}
 
 	@Shadow
