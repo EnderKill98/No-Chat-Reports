@@ -3,6 +3,7 @@ package com.aizistral.nochatreports.common.core;
 import java.util.Optional;
 
 import com.aizistral.nochatreports.common.config.NCRConfig;
+import com.aizistral.nochatreports.common.encryption.AESEncryptor;
 import com.aizistral.nochatreports.common.encryption.Encryptor;
 
 import net.minecraft.network.chat.Component;

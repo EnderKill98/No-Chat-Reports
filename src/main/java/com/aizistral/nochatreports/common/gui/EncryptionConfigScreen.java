@@ -2,13 +2,13 @@ package com.aizistral.nochatreports.common.gui;
 
 import java.util.Objects;
 
+import org.spongepowered.asm.mixin.Shadow;
+
 import com.aizistral.nochatreports.common.config.NCRConfig;
 import com.aizistral.nochatreports.common.config.NCRConfigEncryption;
 import com.aizistral.nochatreports.common.encryption.Encryption;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.checkerframework.checker.units.qual.A;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -192,9 +192,9 @@ public class EncryptionConfigScreen extends Screen {
 				}).withValues(indicesForLength(keyCount))
 				.displayOnlyValue()
 				.withInitialValue(initialValue)
-				.withTooltip(value -> this.minecraft.font.split(
-						Component.literal("You can have multiple keys separated by commas. This index specifies, which key is use for encrypting messages."), 250))
-				.create(this.keyField.x + this.keyField.getWidth() - buttonWidth, this.keyField.y + 24, buttonWidth, 20, CommonComponents.EMPTY,
+				.withTooltip(value -> new AdvancedTooltip(
+						Component.literal("You can have multiple keys separated by commas. This index specifies, which key is use for encrypting messages.")).setMaxWidth(250))
+				.create(this.keyField.getX() + this.keyField.getWidth() - buttonWidth, this.keyField.getY() + 24, buttonWidth, 20, CommonComponents.EMPTY,
 						(cycleButton, value) -> {
 							this.unfocusFields();
 						});
