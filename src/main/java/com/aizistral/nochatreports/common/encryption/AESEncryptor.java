@@ -80,7 +80,10 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 							.put(encrypted).array());
 				} else if (this.encryption.getEncapsulation().equalsIgnoreCase("Sus16")) {
 					return encodeSus16(ByteBuffer.allocate(encrypted.length + tuple.getB().length).put(tuple.getB())
-							.put(encrypted).array());
+					.put(encrypted).array());
+				} else if (this.encryption.getEncapsulation().equalsIgnoreCase("MC256")) {
+					return encodeMC256(ByteBuffer.allocate(encrypted.length + tuple.getB().length).put(tuple.getB())
+					.put(encrypted).array());
 				} else {
 					throw new RuntimeException("Unknown Encapsulation: " + this.encryption.getEncapsulation());
 				}
@@ -91,6 +94,8 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 					return encodeBase64R(this.encryptor.doFinal(toBytes(message)));
 				} else if (this.encryption.getEncapsulation().equalsIgnoreCase("Sus16")) {
 					return encodeSus16(this.encryptor.doFinal(toBytes(message)));
+				} else if (this.encryption.getEncapsulation().equalsIgnoreCase("MC256")) {
+					return encodeMC256(this.encryptor.doFinal(toBytes(message)));
 				} else {
 					throw new RuntimeException("Unknown Encapsulation: " + this.encryption.getEncapsulation());
 				}
@@ -134,7 +139,16 @@ public abstract class AESEncryptor<T extends AESEncryption> extends Encryptor<T>
 					firstEx = ex;
 			}
 		}
-		if (candidate == null && firstEx != null) {
+		// next MC256
+		if (candidate == null || !candidate.startsWith("#%")) {
+			try {
+				candidate = internalRawDecrypt(decodeMC256(message));
+				decryptLastUsedEncapsulation = "MC256";
+			} catch (RuntimeException ex) {
+				if(firstEx == null) firstEx = ex;
+			}
+		}
+		if(candidate == null && firstEx != null) {
 			throw firstEx;
 		}
 		return candidate;
