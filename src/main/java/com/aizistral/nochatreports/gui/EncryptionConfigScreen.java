@@ -242,6 +242,10 @@ public class EncryptionConfigScreen extends Screen {
 			this.renderTooltip(poseStack, this.algorithmButton.getTooltip(), i, j);
 		}
 
+		if (this.usedEncryptionKeyIndexButton != null && this.usedEncryptionKeyIndexButton.isMouseOver(i, j)) {
+			this.renderTooltip(poseStack, this.usedEncryptionKeyIndexButton.getTooltip(), i, j);
+		}
+
 		super.render(poseStack, i, j, f);
 
 		if (StringUtil.isNullOrEmpty(this.keyField.getValue()) && !this.keyField.isFocused()) {
