@@ -1,5 +1,7 @@
 package com.aizistral.nochatreports.encryption;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
@@ -9,6 +11,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
+import com.aizistral.nochatreports.NoChatReports;
 import it.unimi.dsi.fastutil.chars.Char2CharArrayMap;
 import it.unimi.dsi.fastutil.chars.Char2CharMap;
 import it.unimi.dsi.fastutil.chars.Char2CharMaps;
@@ -23,6 +26,8 @@ public abstract class Encryptor<T extends Encryption> {
 	protected static final Char2CharMap SUS16_SHIFTS_REVERSE = createSus16ShiftsReverse();
 
 	private static String MC256_SHIFTS = "⅛⅜⅝⅞⅓⅔✉☂☔☄⛄☃⚐✎❣♤♧♡♢⛈ªº¬«»░▒▓∅∈≡±≥≤⌠⌡÷≈°∙√ⁿ²¡‰­·₴≠×ΦΨικλοπτυφЯабвгдежзиклмнопрстуфхцчшщъыьэюяєѕіј„…⁊←↑→↓⇄＋ƏəɛɪҮүӨөʻˌ;ĸ⁰¹³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁱ™⧈⚔☠ᴀʙᴄᴅᴇꜰɢʜᴊᴋʟᴍɴᴏᴘꞯʀꜱᴛᴜᴠᴡʏᴢ¢¤¥©®µ¶¼½¾·‐‚†‡•‱′″‴‵‶‷‹›※‼⁂⁉⁎⁑⁒⁗℗−∓∞☀☁☈Є☲☵☽♀♂⚥♠♣♥♦♩♪♫♬♭♮♯⚀⚁⚂⚃⚄⚅ʬ⚡⛏✔❄❌❤⭐△▷▽◁◆◇○◎☆★✘⸸▲▶▼◀●◦◘⚓ᛩᛪ☺☻";
+	private static char INVIS2_ZERO = ' '; // Space
+	private static char INVIS2_ONE = '\u200c';
 
 	protected Encryptor() {
 		// NO-OP
@@ -156,6 +161,40 @@ public abstract class Encryptor<T extends Encryption> {
 			bytes[i] = (byte)MC256_SHIFTS.indexOf(string.charAt(i));
 		}
 		return bytes;
+	}
+
+	protected static String encodeInvis2(byte[] data) {
+		StringBuilder encoded = new StringBuilder();
+		for(byte b : data) {
+			for (int bit = 7; bit >= 0; bit--) {
+				encoded.append(((b >>> bit) & 0x01) == 1 ? INVIS2_ONE : INVIS2_ZERO);
+			}
+		}
+		return encoded.toString();
+	}
+
+	protected static byte[] decodeInvis2(String string) {
+		ByteArrayOutputStream bout = new ByteArrayOutputStream(string.length() / 8);
+		byte b = 0;
+		int bit = 8;
+		for(char c : string.toCharArray()) {
+			if(c == INVIS2_ONE) {
+				bit--;
+				b |= 0x01 << bit;
+			}else if(c == INVIS2_ZERO) {
+				bit--;
+			}else {
+				continue;
+			}
+
+			// Got 8 bits add finished byte
+			if(bit == 0) {
+				bout.write(new byte[] { b }, 0, 1);
+				bit = 8;
+				b = 0;
+			}
+		}
+		return bout.toByteArray();
 	}
 
 	protected static byte[] decodeBase64NonRBytes(String string) {

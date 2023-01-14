@@ -6,6 +6,7 @@ import com.aizistral.nochatreports.NoChatReports;
 import com.aizistral.nochatreports.config.NCRConfig;
 import com.aizistral.nochatreports.encryption.AESEncryption;
 import com.aizistral.nochatreports.encryption.AESEncryptor;
+import com.aizistral.nochatreports.encryption.Encryption;
 import com.aizistral.nochatreports.encryption.Encryptor;
 
 import net.minecraft.network.chat.Component;
@@ -88,7 +89,8 @@ public class EncryptionUtil {
 
 	public static Optional<String> tryDecrypt(String message, Encryptor<?> encryptor) {
 		try {
-			String[] splat = message.contains(" ") ? message.split(" ") : new String[] { message };
+			// Invis2 uses space. Don't split on spaces if other char (\u200c) for invisi2 found.
+			String[] splat = message.contains(" ") && !message.contains("\u200c") ? message.split(" ") : new String[] { message };
 			String decryptable = splat[splat.length-1];
 
 			String decrypted = encryptor.decrypt(decryptable);

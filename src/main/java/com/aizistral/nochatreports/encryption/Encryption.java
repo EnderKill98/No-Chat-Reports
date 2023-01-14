@@ -19,6 +19,7 @@ public abstract class Encryption {
 	public static final AESCFB8Encryption AES_CFB8_BASE64R = new AESCFB8Encryption("Base64R");
 	public static final AESCFB8Encryption AES_CFB8_SUS16 = new AESCFB8Encryption("Sus16");
 	public static final AESCFB8Encryption AES_CFB8_MC256 = new AESCFB8Encryption("MC256");
+	public static final AESCFB8Encryption AES_CFB8_INVIS2 = new AESCFB8Encryption("Invis2");
 	public static final AESGCMEncryption AES_GCM = new AESGCMEncryption();
 	public static final AESECBEncryption AES_ECB = new AESECBEncryption();
 	public static final CaesarEncryption CAESAR = new CaesarEncryption();
