@@ -61,7 +61,7 @@ public abstract class MixinChatScreen extends Screen {
 		};
 		NCRConfig.getEncryption().setLastMessage(message[0]);
 
-		if (!message[0].isEmpty() && NCRConfig.getEncryption().shouldEncrypt(message[0])) {
+		if (!message[0].isEmpty() && !Screen.hasControlDown() && NCRConfig.getEncryption().shouldEncrypt(message[0])) {
 			NCRConfig.getEncryption().getEncryptor().ifPresent(e -> {
 				//replace & color codes with § when it has letter or number after it
 				message[0] = colorCodes(message[0]);
