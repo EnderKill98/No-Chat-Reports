@@ -1,5 +1,6 @@
 package com.aizistral.nochatreports.compression;
 
+import com.aayushatharva.brotli4j.Brotli4jLoader;
 import com.aayushatharva.brotli4j.decoder.BrotliInputStream;
 import com.aayushatharva.brotli4j.encoder.BrotliEncoderChannel;
 import com.aayushatharva.brotli4j.encoder.Encoder;
@@ -14,8 +15,8 @@ public class BrotliCompression extends Compression {
 
     protected BrotliCompression() {
         try {
-            Brotli.ensureAvailability();
-            if (!Brotli.isAvailable())
+            Brotli4jLoader.ensureAvailability();
+            if (!Brotli4jLoader.isAvailable())
                 throw new RuntimeException("Brotli is not available (maybe not for your OS/Arch).");
         }catch (Throwable ex) {
             REGISTERED.remove(this);

@@ -5,10 +5,10 @@ plugins {
 	id "com.matthewprenger.cursegradle" version "1.+"
 }
 
-import org.gradle.nativeplatform.platform.internal.Architectures
-import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+//import org.gradle.nativeplatform.platform.internal.Architectures
+//import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 def brotliVersion = "1.9.0"
-def operatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
+//def operatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
 
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
@@ -49,8 +49,13 @@ dependencies {
 	//modRuntimeOnly include('com.nixxcode.jvmbrotli:jvmbrotli-natives:0.2.0')
 
 	// Seems even netty prefers this lib/loader
-	modImplementation "com.aayushatharva.brotli4j:brotli4j:$brotliVersion"
-	modRuntimeOnly("""com.aayushatharva.brotli4j:native-${
+	modCompileOnly include("com.aayushatharva.brotli4j:brotli4j:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-windows-x86_64:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-linux-x86_64:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-linux-aarch64:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-osx-x86_64:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-osx-aarch64:$brotliVersion")
+	/*runtimeOnly("""com.aayushatharva.brotli4j:native-${
 		if (operatingSystem.isWindows()) "windows-x86_64"
 		else if (operatingSystem.isMacOsX())
 			if (DefaultNativePlatform.getCurrentArchitecture().isArm()) "osx-aarch64"
@@ -64,7 +69,7 @@ dependencies {
 				throw new IllegalStateException("Unsupported architecture: ${DefaultNativePlatform.getCurrentArchitecture().getName()}");
 		else
 			throw new IllegalStateException("Unsupported operating system: $operatingSystem");
-	}:$brotliVersion""")
+	}:$brotliVersion""")*/
 }
 
 processResources {
