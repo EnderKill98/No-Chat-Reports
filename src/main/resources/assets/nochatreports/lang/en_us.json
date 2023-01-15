@@ -72,7 +72,7 @@
 	"specific_compression.nochatreports.brotli.name": "Brotli",
 	"specific_compression.nochatreports.brotli": "§lBrotli§r\nCompress using Brotli.",
 	"specific_compression.nochatreports.custom.name": "Custom",
-	"specific_compression.nochatreports.custom": "§lCustom§r\nCustom compression by JamSharp.\nUses an embedded dictionary\nfrom opensubtitles.org to reduce size\n(licensed under CC By SA 4.0).",
+	"specific_compression.nochatreports.custom": "§lCustom§r\nCustom compression by JamSharp.\nUses an embedded dictionary\nbased on data from opensubtitles.org\nto reduce size\n(licensed under CC By SA 4.0).",
 	"specific_compression.nochatreports.auto.name": "Automatic",
 	"specific_compression.nochatreports.auto": "§lAutomatic§r\nTry out all compressions and\nchoose the best compression\nfor a given message.",
 	"nochatreports.connect.nokey_rejected": "Server rejected connection without chat signing key.",

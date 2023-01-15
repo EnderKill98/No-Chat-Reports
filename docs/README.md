@@ -44,7 +44,7 @@
 
 ## Credits
 
-The file `bestDict.txt` is from [www.opensubtitles.org](https://www.opensubtitles.org/) and licensed under CC By SA 4.0 
+The file `bestDict.txt` is based on data from [www.opensubtitles.org](https://www.opensubtitles.org/) and licensed under CC By SA 4.0 
 
 ## Version
 
