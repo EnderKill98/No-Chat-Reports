@@ -42,6 +42,12 @@
 | \n        | New line |
 | \r        | Carriage return |
 
+## Credits
+
+The file `bestDict.txt` is from [www.opensubtitles.org](https://www.opensubtitles.org/) and licensed under CC By SA 4.0 
+
+## Version
+
 **Current Version:** 1.19.2-v1.13.12
 
 **Minecraft Version:** 1.19.2

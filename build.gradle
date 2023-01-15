@@ -5,6 +5,11 @@ plugins {
 	id "com.matthewprenger.cursegradle" version "1.+"
 }
 
+import org.gradle.nativeplatform.platform.internal.Architectures
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
+def brotliVersion = "1.9.0"
+def operatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
+
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
@@ -37,6 +42,29 @@ dependencies {
 	modImplementation include(fabricApi.module("fabric-screen-api-v1", project.fabric_version))
 	modImplementation include(fabricApi.module("fabric-rendering-v1", project.fabric_version))
 	modImplementation include(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
+
+	// Brotli based compression
+	// JVMBrotli seems unmaintained and lacks linux aarch64 (was planned but never happened)
+	//modCompileOnly include('com.nixxcode.jvmbrotli:jvmbrotli:0.2.0')
+	//modRuntimeOnly include('com.nixxcode.jvmbrotli:jvmbrotli-natives:0.2.0')
+
+	// Seems even netty prefers this lib/loader
+	modImplementation "com.aayushatharva.brotli4j:brotli4j:$brotliVersion"
+	modRuntimeOnly("""com.aayushatharva.brotli4j:native-${
+		if (operatingSystem.isWindows()) "windows-x86_64"
+		else if (operatingSystem.isMacOsX())
+			if (DefaultNativePlatform.getCurrentArchitecture().isArm()) "osx-aarch64"
+			else "osx-x86_64"
+		else if (operatingSystem.isLinux())
+			if (Architectures.ARM_V7.isAlias(DefaultNativePlatform.getCurrentArchitecture().getName())) "linux-armv7"
+			//else if (Architectures.AARCH64.isAlias(DefaultNativePlatform.getCurrentArchitecture().getName())) "linux-aarch64" // Gradle used by NCR is too old :|
+			else if (DefaultNativePlatform.getCurrentArchitecture().getName().equalsIgnoreCase("aarch64") || DefaultNativePlatform.getCurrentArchitecture().getName().equalsIgnoreCase("arm-v8") || DefaultNativePlatform.getCurrentArchitecture().getName().equalsIgnoreCase("arm64")) "linux-aarch64"
+			else if (Architectures.X86_64.isAlias(DefaultNativePlatform.getCurrentArchitecture().getName())) "linux-x86_64"
+			else
+				throw new IllegalStateException("Unsupported architecture: ${DefaultNativePlatform.getCurrentArchitecture().getName()}");
+		else
+			throw new IllegalStateException("Unsupported operating system: $operatingSystem");
+	}:$brotliVersion""")
 }
 
 processResources {

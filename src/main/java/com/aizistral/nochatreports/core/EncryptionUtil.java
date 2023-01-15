@@ -2,15 +2,12 @@ package com.aizistral.nochatreports.core;
 
 import java.util.Optional;
 
-import com.aizistral.nochatreports.NoChatReports;
+import com.aizistral.nochatreports.compression.Compression;
 import com.aizistral.nochatreports.config.NCRConfig;
-import com.aizistral.nochatreports.encryption.AESEncryption;
 import com.aizistral.nochatreports.encryption.AESEncryptor;
-import com.aizistral.nochatreports.encryption.Encryption;
 import com.aizistral.nochatreports.encryption.Encryptor;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -18,9 +15,14 @@ import org.jetbrains.annotations.Nullable;
 
 public class EncryptionUtil {
 
-	public record DetailedDecryptionInfo(Component decrypted, int keyIndex, @Nullable String encapsulation) {
+	public record DetailedDecryptionInfo(Component decrypted, int keyIndex, @Nullable String encapsulation, @Nullable Compression compression, @Nullable Float compressionRatio) {
 		public String getDecryptedText() {
 			return decrypted.getString();
+		}
+
+		public @Nullable String getCompressionName() {
+			if(compression == null) return null;
+			return compression.getCompressionName();
 		}
 	}
 
@@ -50,9 +52,14 @@ public class EncryptionUtil {
 
 			if(tryDecrypt(copy, encryption)) {
 				String encapsulation = null;
-				if(encryption instanceof AESEncryptor<?> aesEncryption)
+				Compression compression = null;
+				Float compressionRatio = null;
+				if(encryption instanceof AESEncryptor<?> aesEncryption) {
 					encapsulation = aesEncryption.getDecryptLastUsedEncapsulation();
-				return Optional.of(new DetailedDecryptionInfo(copy, index, encapsulation));
+					compression = aesEncryption.getDecryptLastUsedCompression();
+					compressionRatio = aesEncryption.getDecryptLastUsedCompressionRatio();
+				}
+				return Optional.of(new DetailedDecryptionInfo(copy, index, encapsulation, compression, compressionRatio));
 			}
 			index++;
 		}
@@ -95,7 +102,7 @@ public class EncryptionUtil {
 
 			String decrypted = encryptor.decrypt(decryptable);
 
-			if (decrypted.startsWith("#%"))
+			if (decrypted.startsWith("#%") || decrypted.startsWith("#?"))
 				return Optional.of(message.substring(0, message.length() - decryptable.length()) + decrypted.substring(2, decrypted.length()));
 			else
 				return Optional.empty();

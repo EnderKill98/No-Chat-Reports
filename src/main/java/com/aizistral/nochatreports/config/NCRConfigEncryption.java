@@ -1,20 +1,18 @@
 package com.aizistral.nochatreports.config;
 
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import com.aizistral.nochatreports.encryption.AESCFB8Encryptor;
+import com.aizistral.nochatreports.compression.Compression;
 import com.aizistral.nochatreports.encryption.Encryption;
 import com.aizistral.nochatreports.encryption.Encryptor;
-import com.aizistral.nochatreports.gui.UnsafeServerScreen;
 
-import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.StringUtil;
-import org.checkerframework.checker.units.qual.A;
+
+import javax.annotation.Nullable;
 
 public class NCRConfigEncryption extends JSONConfig {
 	protected static final String FILE_NAME = "NoChatReports/NCR-Encryption.json";
@@ -29,6 +27,9 @@ public class NCRConfigEncryption extends JSONConfig {
 	private transient String lastMessage = "???";
 	protected List<String> commandPrefixes = List.of("/", ".");
 	private int usedEncryptionKeyIndex = 0;
+	private CompressionPolicy compressionPolicy = CompressionPolicy.WhenNecessary;
+	private @Nullable String specificCompressionName = null; // Null = Find best
+	private transient @Nullable Compression specificCompression;
 
 	protected NCRConfigEncryption() {
 		super(FILE_NAME);
@@ -43,6 +44,10 @@ public class NCRConfigEncryption extends JSONConfig {
 	protected void uponLoad() {
 		this.algorithm = Encryption.getRegistered().stream().filter(e -> e.getName().equals(this.algorithmName))
 				.findFirst().orElse(Encryption.AES_CFB8_BASE64R);
+		if(this.specificCompressionName == null)
+			this.specificCompression = null;
+		else
+			this.specificCompression = Arrays.stream(Compression.getRegistered()).filter(c -> c.getCompressionName().equals(this.specificCompressionName)).findFirst().orElse(null);
 		this.validate();
 	}
 
@@ -227,5 +232,31 @@ public class NCRConfigEncryption extends JSONConfig {
 	public void setUsedEncryptionKeyIndex(int usedEncryptionKeyIndex) {
 		this.usedEncryptionKeyIndex = usedEncryptionKeyIndex;
 		saveFile();
+	}
+
+	public CompressionPolicy getCompressionPolicy() {
+		return compressionPolicy;
+	}
+
+	public void setCompressionPolicy(CompressionPolicy compressionPolicy) {
+		this.compressionPolicy = compressionPolicy;
+		saveFile();
+	}
+
+	public @Nullable Compression getSpecificCompression() {
+		return specificCompression;
+	}
+
+	public void setSpecificCompression(@Nullable Compression specificCompression) {
+		this.specificCompression = specificCompression;
+		this.specificCompressionName = specificCompression != null ? specificCompression.getCompressionName() : null;
+		saveFile();
+	}
+
+	public enum CompressionPolicy {
+		WhenNecessary,
+		Preferred,
+		Always,
+		Never,
 	}
 }

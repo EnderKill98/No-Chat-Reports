@@ -1,31 +1,27 @@
 package com.aizistral.nochatreports.mixins.client;
 
-import net.minecraft.world.level.levelgen.WorldgenRandom;
+import com.aizistral.nochatreports.compression.Compression;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 
 import com.aizistral.nochatreports.NoChatReports;
 import com.aizistral.nochatreports.config.NCRConfig;
-import com.aizistral.nochatreports.config.NCRConfigClient;
 import com.aizistral.nochatreports.core.EncryptionUtil;
-import com.aizistral.nochatreports.encryption.Encryptor;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.GuiMessage;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.contents.LiteralContents;
-import net.minecraft.network.chat.contents.TranslatableContents;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Mixin(ChatComponent.class)
 public class MixinChatComponent {
@@ -34,7 +30,8 @@ public class MixinChatComponent {
 	private Component lastMessageOriginal;
 	private int lastMessageKeyIndex;
 	private @Nullable String lastMessageEncapsulation;
-	private WorldgenRandom.Algorithm lastMessageAlgo;
+	private @Nullable Compression lastMessageCompression;
+	private @Nullable Float lastMessageCompressionRatio;
 
 	@ModifyVariable(method = "addRecentChat", at = @At("HEAD"), argsOnly = true)
 	private String onAddRecentChat(String message) {
@@ -54,14 +51,20 @@ public class MixinChatComponent {
 			return tag;
 
 		this.lastMessageEncrypted = false;
-		Component tooltip = Component.empty().append(Component.translatable("tag.nochatreports.encrypted",
+		MutableComponent tooltip = Component.empty().append(Component.translatable("tag.nochatreports.encrypted",
 				Component.literal(NCRConfig.getEncryption().getAlgorithm().getName()).withStyle(ChatFormatting.BOLD)))
 				.append(CommonComponents.NEW_LINE)
 				.append(Component.translatable("tag.nochatreports.encryption_tooltip_extra_key", this.lastMessageKeyIndex))
 				.append(CommonComponents.NEW_LINE)
 				.append(Component.translatable("tag.nochatreports.encryption_tooltip_extra_encapsultation", this.lastMessageEncapsulation == null ? "Unknown" : this.lastMessageEncapsulation))
-				.append(CommonComponents.NEW_LINE)
-				.append(Component.translatable("tag.nochatreports.encrypted_original", this.lastMessageOriginal));
+				.append(CommonComponents.NEW_LINE);
+		if(lastMessageCompression != null)
+				tooltip = tooltip.append(Component.translatable("tag.nochatreports.encryption_tooltip_extra_compression", this.lastMessageCompression.getCompressionName()))
+				.append(CommonComponents.NEW_LINE);
+		if(lastMessageCompressionRatio != null)
+				tooltip = tooltip.append(Component.translatable("tag.nochatreports.encryption_tooltip_extra_compression_ratio", new BigDecimal(lastMessageCompressionRatio).setScale(2, RoundingMode.HALF_UP)))
+				.append(CommonComponents.NEW_LINE);
+		tooltip = tooltip.append(Component.translatable("tag.nochatreports.encrypted_original", this.lastMessageOriginal));
 
 		return new GuiMessageTag(0x8B3EC7, ENCRYPTED_ICON, tooltip, "Encrypted");
 	}
@@ -84,6 +87,8 @@ public class MixinChatComponent {
 			this.lastMessageEncrypted = true;
 			this.lastMessageKeyIndex = info.keyIndex();
 			this.lastMessageEncapsulation = info.encapsulation();
+			this.lastMessageCompression = info.compression();
+			this.lastMessageCompressionRatio = info.compressionRatio();
 		}, () -> this.lastMessageEncrypted = false);
 
 		return this.lastMessageEncrypted ? decrypted.get().decrypted() : msg;

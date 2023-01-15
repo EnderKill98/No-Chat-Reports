@@ -1,21 +1,19 @@
 package com.aizistral.nochatreports.gui;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
-import org.checkerframework.checker.units.qual.A;
+import com.aizistral.nochatreports.compression.Compression;
 import org.spongepowered.include.com.google.common.base.Objects;
 
 import com.aizistral.nochatreports.config.NCRConfig;
 import com.aizistral.nochatreports.config.NCRConfigEncryption;
 import com.aizistral.nochatreports.encryption.Encryption;
-import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
@@ -23,19 +21,11 @@ import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.MultiLineLabel;
-import net.minecraft.client.gui.components.TooltipAccessor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.AbstractCommandBlockEditScreen;
-import net.minecraft.client.gui.screens.inventory.CommandBlockEditScreen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.StringUtil;
-import net.minecraft.world.level.BaseCommandBlock;
-import net.minecraft.world.level.block.entity.CommandBlockEntity;
 
 @Environment(EnvType.CLIENT)
 public class EncryptionConfigScreen extends Screen {
@@ -53,6 +43,8 @@ public class EncryptionConfigScreen extends Screen {
 	private CustomEditBox keyField, passField;
 	private ImageButton validationIcon;
 	private CycleButton<Encryption> algorithmButton;
+	private CycleButton<String> specificCompressionButton;
+	private CycleButton<NCRConfigEncryption.CompressionPolicy> compressionPolicyButton;
 	private MultiLineLabel keyDesc = MultiLineLabel.EMPTY, passDesc = MultiLineLabel.EMPTY;
 	protected Checkbox encryptPublicCheck;
 	private boolean settingPassKey = false;
@@ -148,10 +140,10 @@ public class EncryptionConfigScreen extends Screen {
 				}));
 
 		CycleButton<Encryption> cycle = CycleButton.<Encryption>builder(value -> {
-			return Component.translatable("gui.nochatreports.encryption_config.algorithm",
-					Component.translatable("algorithm.nochatreports." + value.getID() + ".name"));
-		}).withValues(Encryption.getRegistered()).displayOnlyValue().withInitialValue(this.getConfig()
-				.getAlgorithm()).withTooltip(value -> this.minecraft.font.split(
+					return Component.translatable("gui.nochatreports.encryption_config.algorithm",
+							Component.translatable("algorithm.nochatreports." + value.getID() + ".name"));
+				}).withValues(Encryption.getRegistered()).displayOnlyValue().withInitialValue(this.getConfig()
+						.getAlgorithm()).withTooltip(value -> this.minecraft.font.split(
 						Component.translatable("algorithm.nochatreports." + value.getID()), 250))
 				.create(this.width / 2 - 4 - 218, this.passField.y + 48, 218, 20, CommonComponents.EMPTY,
 						(cycleButton, value) -> {
@@ -160,6 +152,32 @@ public class EncryptionConfigScreen extends Screen {
 						});
 
 		this.addRenderableWidget(this.algorithmButton = cycle);
+
+		CycleButton<NCRConfigEncryption.CompressionPolicy> compressionPolicyCycle = CycleButton.<NCRConfigEncryption.CompressionPolicy>builder(value -> {
+					return Component.translatable("gui.nochatreports.encryption_config.compression_policy",
+							Component.translatable("compression_policy.nochatreports." + value.toString().toLowerCase() + ".name"));
+				}).withValues(NCRConfigEncryption.CompressionPolicy.values()).displayOnlyValue().withInitialValue(this.getConfig().getCompressionPolicy()).withTooltip(value -> this.minecraft.font.split(
+						Component.translatable("compression_policy.nochatreports." + value.toString().toLowerCase()), 250))
+				.create(this.width / 2 - 4 - 218, this.passField.y + 48 + 24, 218, 20, CommonComponents.EMPTY,
+						(cycleButton, value) -> {
+							this.unfocusFields();
+						});
+
+		this.addRenderableWidget(this.compressionPolicyButton = compressionPolicyCycle);
+
+		CycleButton<String> specificCompressionCycle = CycleButton.<String>builder(value -> {
+					return Component.translatable("gui.nochatreports.encryption_config.specific_compression",
+							Component.translatable("specific_compression.nochatreports." + value + ".name"));
+				}).withValues(getRegisteredCompressionIdsAndAuto()).displayOnlyValue().withInitialValue(this.getConfig()
+						.getSpecificCompression() == null ? "auto" : this.getConfig().getSpecificCompression().getCompressionName().toLowerCase()).withTooltip(value -> this.minecraft.font.split(
+						Component.translatable("specific_compression.nochatreports." + value), 250))
+				.create(this.width / 2 + 4, this.passField.y + 48 + 24, 218, 20, CommonComponents.EMPTY,
+						(cycleButton, value) -> {
+							this.unfocusFields();
+						});
+
+		this.addRenderableWidget(this.specificCompressionButton = specificCompressionCycle);
+
 
 		this.onAlgorithmUpdate(this.algorithmButton.getValue());
 
@@ -175,6 +193,14 @@ public class EncryptionConfigScreen extends Screen {
 		}
 
 		updateUsedKeyIndexButton();
+	}
+
+	private String[] getRegisteredCompressionIdsAndAuto() {
+		ArrayList<String> compressions = new ArrayList<>();
+		for(Compression compression : Compression.getRegistered())
+			compressions.add(compression.getCompressionName().toLowerCase());
+		compressions.add("auto");
+		return compressions.toArray(new String[0]);
 	}
 
 	private ArrayList<Integer> indicesForLength(int length) {
@@ -244,6 +270,14 @@ public class EncryptionConfigScreen extends Screen {
 
 		if (this.usedEncryptionKeyIndexButton != null && this.usedEncryptionKeyIndexButton.isMouseOver(i, j)) {
 			this.renderTooltip(poseStack, this.usedEncryptionKeyIndexButton.getTooltip(), i, j);
+		}
+
+		if (this.compressionPolicyButton != null && this.compressionPolicyButton.isMouseOver(i, j)) {
+			this.renderTooltip(poseStack, this.compressionPolicyButton.getTooltip(), i, j);
+		}
+
+		if (this.specificCompressionButton != null && this.specificCompressionButton.isMouseOver(i, j)) {
+			this.renderTooltip(poseStack, this.specificCompressionButton.getTooltip(), i, j);
 		}
 
 		super.render(poseStack, i, j, f);
@@ -336,11 +370,16 @@ public class EncryptionConfigScreen extends Screen {
 		var config = NCRConfig.getEncryption();
 		var encryption = this.algorithmButton.getValue();
 		var usedEncryptionKeyIndex = this.usedEncryptionKeyIndexButton.getValue();
+		var compressionPolicy = this.compressionPolicyButton.getValue();
+		var specificCompression = Arrays.stream(Compression.getRegistered()).filter(c -> c.getCompressionName().equalsIgnoreCase(this.specificCompressionButton.getValue())).findFirst().orElse(null);
+
 		config.setAlgorithm(encryption);
 		config.setEncryptionKey(!StringUtil.isNullOrEmpty(this.keyField.getValue()) ? this.keyField.getValue()
 				: encryption.getDefaultKey());
 		config.setEncryptPublic(this.encryptPublicCheck.selected());
 		config.setUsedEncryptionKeyIndex(usedEncryptionKeyIndex);
+		config.setCompressionPolicy(compressionPolicy);
+		config.setSpecificCompression(specificCompression);
 	}
 
 	private boolean hugeGUI() {

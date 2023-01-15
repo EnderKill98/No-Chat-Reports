@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.aizistral.nochatreports.NoChatReports;
+import com.aizistral.nochatreports.encryption.AESEncryptor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,11 +12,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.aizistral.nochatreports.config.NCRConfig;
-import com.aizistral.nochatreports.config.NCRConfigClient;
 import com.aizistral.nochatreports.core.ServerSafetyLevel;
 import com.aizistral.nochatreports.core.ServerSafetyState;
 import com.aizistral.nochatreports.gui.EncryptionButton;
-import com.aizistral.nochatreports.gui.EncryptionConfigScreen;
 import com.aizistral.nochatreports.gui.EncryptionWarningScreen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -70,7 +68,11 @@ public abstract class MixinChatScreen extends Screen {
 				String encrypt = message[0].substring(index);
 
 				if (encrypt.length() > 0) {
-					info.setReturnValue(noencrypt + e.encrypt("#%" + encrypt));
+					if(e instanceof AESEncryptor<?>) {
+						info.setReturnValue(((AESEncryptor<?>) e).encryptAndCompress(noencrypt, encrypt, NCRConfig.getEncryption().getCompressionPolicy(), NCRConfig.getEncryption().getSpecificCompression()));
+					}else {
+						info.setReturnValue(noencrypt + e.encrypt("#%" + encrypt));
+					}
 				}
 			});
 		}
