@@ -126,6 +126,15 @@ dependencies {
 	implementation "generic:modmenu:5.0.2"
 	implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:" + rootProject.cloth_config_version)
 	annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
+
+    // Brotli based compression
+    def brotliVersion = "1.9.0"
+    compileOnly "com.aayushatharva.brotli4j:brotli4j:$brotliVersion"
+    compileOnly "com.aayushatharva.brotli4j:native-windows-x86_64:$brotliVersion"
+    compileOnly "com.aayushatharva.brotli4j:native-linux-x86_64:$brotliVersion"
+    compileOnly "com.aayushatharva.brotli4j:native-linux-aarch64:$brotliVersion"
+    compileOnly "com.aayushatharva.brotli4j:native-osx-x86_64:$brotliVersion"
+    compileOnly "com.aayushatharva.brotli4j:native-osx-aarch64:$brotliVersion"
 }
 
 

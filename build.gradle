@@ -84,6 +84,15 @@ dependencies {
 	modImplementation include(fabricApi.module("fabric-screen-api-v1", project.fabric_version))
 	modImplementation include(fabricApi.module("fabric-rendering-v1", project.fabric_version))
 	modImplementation include(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
+
+	// Brotli based compression
+	def brotliVersion = "1.9.0"
+	modCompileOnly include("com.aayushatharva.brotli4j:brotli4j:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-windows-x86_64:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-linux-x86_64:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-linux-aarch64:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-osx-x86_64:$brotliVersion")
+	modRuntimeOnly include("com.aayushatharva.brotli4j:native-osx-aarch64:$brotliVersion")
 }
 
 sourceSets.remove(sourceSets.test)

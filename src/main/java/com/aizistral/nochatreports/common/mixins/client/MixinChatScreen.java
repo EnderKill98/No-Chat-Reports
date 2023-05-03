@@ -1,5 +1,6 @@
 package com.aizistral.nochatreports.common.mixins.client;
 
+import com.aizistral.nochatreports.common.encryption.AESEncryptor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -34,6 +35,9 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This is responsible for adding safety status indicator to the bottom-right corner of chat screen.
@@ -82,18 +86,23 @@ public abstract class MixinChatScreen extends Screen {
 	}
 
 	@Inject(method = "normalizeChatMessage", at = @At("RETURN"), cancellable = true)
-	public void onBeforeMessage(String original, CallbackInfoReturnable<String> info) {
-		String message = info.getReturnValue();
-		NCRConfig.getEncryption().setLastMessage(message);
+	public void onBeforeMessage(String original, CallbackInfoReturnable <String> info) {
+		final String[] message = {info.getReturnValue() };
+		NCRConfig.getEncryption().setLastMessage(message[0]);
 
-		if (!message.isEmpty() && !Screen.hasControlDown() && NCRConfig.getEncryption().shouldEncrypt(message)) {
-			NCRConfig.getEncryption().getEncryptor().ifPresent(e -> {
-				int index = NCRConfig.getEncryption().getEncryptionStartIndex(message);
-				String noencrypt = message.substring(0, index);
-				String encrypt = message.substring(index, message.length());
+		if (!message[0].isEmpty() && !Screen.hasControlDown() && NCRConfig.getEncryption().shouldEncrypt(message[0])) {			NCRConfig.getEncryption().getEncryptor().ifPresent(e -> {
+			//replace & color codes with § when it has letter or number after it
+			message[0] = colorCodes(message[0]);
+			int index = NCRConfig.getEncryption().getEncryptionStartIndex(message[0]);
+			String noencrypt = message[0].substring(0, index);
+			String encrypt = message[0].substring(index);
 
 				if (encrypt.length() > 0) {
-					info.setReturnValue(noencrypt + e.encrypt("#%" + encrypt));
+					if(e instanceof AESEncryptor<?>) {
+						info.setReturnValue(((AESEncryptor<?>) e).encryptAndCompress(noencrypt, encrypt, NCRConfig.getEncryption().getCompressionPolicy(), NCRConfig.getEncryption().getSpecificCompression()));
+					}else {
+						info.setReturnValue(noencrypt + e.encrypt("#%" + encrypt));
+					}
 				}
 			});
 		}
@@ -227,5 +236,50 @@ public abstract class MixinChatScreen extends Screen {
 
 	@Shadow
 	public abstract String normalizeChatMessage(String string);
+	private String colorCodes(String message) {
+		List<String> colors = new ArrayList<>();
+		List<String> specialChars = new ArrayList<>();
+		colors.add("&0");
+		colors.add("&1");
+		colors.add("&2");
+		colors.add("&3");
+		colors.add("&4");
+		colors.add("&5");
+		colors.add("&6");
+		colors.add("&7");
+		colors.add("&8");
+		colors.add("&9");
+		colors.add("&a");
+		colors.add("&b");
+		colors.add("&c");
+		colors.add("&d");
+		colors.add("&e");
+		colors.add("&f");
+		colors.add("&k");
+		colors.add("&l");
+		colors.add("&m");
+		colors.add("&n");
+		colors.add("&o");
+		colors.add("&r");
+		specialChars.add("\\n");
+		specialChars.add("\\r");
+		for (String color: colors) {
+			message = message.replace(color, color.replace("&", "\u00a7"));
+		}
+		for (String specialChar: specialChars) {
+			//replace & with backslash
+			message = message.replace(specialChar, specialChars(specialChar));
+		}
+
+		return message;
+	}
+
+	private String specialChars(String character) {
+		return switch (character) {
+			case "\\n" -> "\n";
+			case "\\r" -> "\r";
+			default -> character;
+		};
+	}
 
 }

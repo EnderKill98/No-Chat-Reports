@@ -2,9 +2,12 @@ package com.aizistral.nochatreports.common.core;
 
 import java.util.Optional;
 
+import com.aizistral.nochatreports.common.compression.Compression;
 import com.aizistral.nochatreports.common.config.NCRConfig;
+import com.aizistral.nochatreports.common.encryption.AESEncryptor;
 import com.aizistral.nochatreports.common.encryption.Encryptor;
 
+import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.annotation.Nullable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
@@ -13,17 +16,60 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 
 public class EncryptionUtil {
 
-	public static Optional<Component> tryDecrypt(Component component) {
-		var optional = NCRConfig.getEncryption().getEncryptor();
-		if (optional.isEmpty())
-			return Optional.empty();
+	public record DetailedDecryptionInfo(Component decrypted, int keyIndex, @Nullable String encapsulation, @Nullable Compression compression, @Nullable Float compressionRatio) {
+		public String getDecryptedText() {
+			return decrypted.getString();
+		}
 
-		Encryptor<?> encryption = optional.get();
-		Component copy = recreate(component);
-		ComponentContents contents = copy.getContents();
-
-		return Optional.ofNullable(tryDecrypt(copy, encryption) ? copy : null);
+		public @Nullable String getCompressionName() {
+			if(compression == null) return null;
+			return compression.getCompressionName();
+		}
 	}
+
+
+
+	public static Optional<Component> tryDecrypt(Component component) {
+		// Try out all encryptors
+		int index = 0;
+		for(Encryptor<?> encryption : NCRConfig.getEncryption().getAllEncryptors()) {
+			Component copy = recreate(component);
+
+			if(tryDecrypt(copy, encryption)) {
+				return Optional.of(copy);
+			}
+			index++;
+		}
+		return Optional.empty();
+	}
+
+	public static Optional<DetailedDecryptionInfo> tryDecryptDetailed(String message) {
+		return tryDecryptDetailed(Component.literal(message));
+	}
+
+	public static Optional<DetailedDecryptionInfo> tryDecryptDetailed(Component component) {
+		// Try out all encryptors
+		int index = 0;
+		for(Encryptor<?> encryption : NCRConfig.getEncryption().getAllEncryptors()) {
+			Component copy = recreate(component);
+
+			if(tryDecrypt(copy, encryption)) {
+				String encapsulation = null;
+				Compression compression = null;
+				Float compressionRatio = null;
+				if(encryption instanceof AESEncryptor<?> aesEncryption) {
+					encapsulation = aesEncryption.getDecryptLastUsedEncapsulation();
+					compression = aesEncryption.getDecryptLastUsedCompression();
+					compressionRatio = aesEncryption.getDecryptLastUsedCompressionRatio();
+				}
+				return Optional.of(new DetailedDecryptionInfo(copy, index, encapsulation, compression, compressionRatio));
+			}
+			index++;
+		}
+		return Optional.empty();
+	}
+
+
 
 	public static boolean tryDecrypt(Component component, Encryptor<?> encryptor) {
 		boolean decryptedSiblings = false;
@@ -55,12 +101,13 @@ public class EncryptionUtil {
 
 	public static Optional<String> tryDecrypt(String message, Encryptor<?> encryptor) {
 		try {
-			String[] splat = message.contains(" ") ? message.split(" ") : new String[] { message };
+			// Invis2 uses space. Don't split on spaces if other char (\u200c) for invisi2 found.
+			String[] splat = message.contains(" ") && !message.contains("\u200c") ? message.split(" ") : new String[] { message };
 			String decryptable = splat[splat.length-1];
 
 			String decrypted = encryptor.decrypt(decryptable);
 
-			if (decrypted.startsWith("#%"))
+			if (decrypted.startsWith("#%") || decrypted.startsWith("#?"))
 				return Optional.of(message.substring(0, message.length() - decryptable.length()) + decrypted.substring(2, decrypted.length()));
 			else
 				return Optional.empty();

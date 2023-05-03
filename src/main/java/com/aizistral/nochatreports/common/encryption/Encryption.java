@@ -1,5 +1,7 @@
 package com.aizistral.nochatreports.common.encryption;
 
+import org.apache.commons.codec.binary.Base16;
+
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -10,8 +12,13 @@ public abstract class Encryption {
 	private static final List<Encryption> REGISTERED = new ArrayList<>();
 	protected static final Base64.Encoder BASE64_ENCODER = Base64.getEncoder();
 	protected static final Base64.Decoder BASE64_DECODER = Base64.getDecoder();
+	protected static final Base16 BASE16 = new Base16(false);
 
-	public static final AESCFB8Encryption AES_CFB8 = new AESCFB8Encryption();
+	public static final AESCFB8Encryption AES_CFB8_BASE64 = new AESCFB8Encryption("Base64");
+	public static final AESCFB8Encryption AES_CFB8_BASE64R = new AESCFB8Encryption("Base64R");
+	public static final AESCFB8Encryption AES_CFB8_SUS16 = new AESCFB8Encryption("Sus16");
+	public static final AESCFB8Encryption AES_CFB8_MC256 = new AESCFB8Encryption("MC256");
+	public static final AESCFB8Encryption AES_CFB8_INVIS2 = new AESCFB8Encryption("Invis2");
 	public static final AESGCMEncryption AES_GCM = new AESGCMEncryption();
 	public static final AESECBEncryption AES_ECB = new AESECBEncryption();
 	public static final CaesarEncryption CAESAR = new CaesarEncryption();

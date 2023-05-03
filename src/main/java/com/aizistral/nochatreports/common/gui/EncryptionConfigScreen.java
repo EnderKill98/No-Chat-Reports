@@ -1,7 +1,10 @@
 package com.aizistral.nochatreports.common.gui;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
+import com.aizistral.nochatreports.common.compression.Compression;
 import com.aizistral.nochatreports.common.config.NCRConfig;
 import com.aizistral.nochatreports.common.config.NCRConfigEncryption;
 import com.aizistral.nochatreports.common.encryption.Encryption;
@@ -40,9 +43,12 @@ public class EncryptionConfigScreen extends Screen {
 	private CustomEditBox keyField, passField;
 	private ImageButton validationIcon;
 	private CycleButton<Encryption> algorithmButton;
+	private CycleButton<String> specificCompressionButton;
+	private CycleButton<NCRConfigEncryption.CompressionPolicy> compressionPolicyButton;
 	private MultiLineLabel keyDesc = MultiLineLabel.EMPTY, passDesc = MultiLineLabel.EMPTY;
 	protected Checkbox encryptPublicCheck;
 	private boolean settingPassKey = false;
+	private CycleButton<Integer> usedEncryptionKeyIndexButton;
 
 	public EncryptionConfigScreen(Screen previous) {
 		super(CommonComponents.EMPTY);
@@ -140,6 +146,31 @@ public class EncryptionConfigScreen extends Screen {
 
 		this.addRenderableWidget(this.algorithmButton = cycle);
 
+		CycleButton<NCRConfigEncryption.CompressionPolicy> compressionPolicyCycle = CycleButton.<NCRConfigEncryption.CompressionPolicy>builder(value -> {
+					return Component.translatable("gui.nochatreports.encryption_config.compression_policy",
+							Component.translatable("compression_policy.nochatreports." + value.toString().toLowerCase() + ".name"));
+				}).withValues(NCRConfigEncryption.CompressionPolicy.values()).displayOnlyValue().withInitialValue(this.getConfig().getCompressionPolicy()).withTooltip(value -> new AdvancedTooltip(Component.translatable(
+						"compression_policy.nochatreports." + value.toString().toLowerCase())).setMaxWidth(250))
+				.create(this.width / 2 - 4 - 218, this.passField.getY() + 48 + 24, 218, 20, CommonComponents.EMPTY,
+						(cycleButton, value) -> {
+							this.unfocusFields();
+						});
+
+		this.addRenderableWidget(this.compressionPolicyButton = compressionPolicyCycle);
+
+		CycleButton<String> specificCompressionCycle = CycleButton.<String>builder(value -> {
+					return Component.translatable("gui.nochatreports.encryption_config.specific_compression",
+							Component.translatable("specific_compression.nochatreports." + value + ".name"));
+				}).withValues(getRegisteredCompressionIdsAndAuto()).displayOnlyValue().withInitialValue(this.getConfig()
+						.getSpecificCompression() == null ? "auto" : this.getConfig().getSpecificCompression().getCompressionName().toLowerCase()).withTooltip(value -> new AdvancedTooltip(Component.translatable(
+								"specific_compression.nochatreports." + value)).setMaxWidth(250))
+				.create(this.width / 2 + 4, this.passField.getY() + 48 + 24, 218, 20, CommonComponents.EMPTY,
+						(cycleButton, value) -> {
+							this.unfocusFields();
+						});
+
+		this.addRenderableWidget(this.specificCompressionButton = specificCompressionCycle);
+
 		this.onAlgorithmUpdate(this.algorithmButton.getValue());
 
 		if (!StringUtil.isNullOrEmpty(this.getConfig().getEncryptionPassphrase())) {
@@ -152,6 +183,56 @@ public class EncryptionConfigScreen extends Screen {
 				this.keyField.setValue("");
 			}
 		}
+
+		updateUsedKeyIndexButton();
+	}
+
+	private String[] getRegisteredCompressionIdsAndAuto() {
+		ArrayList<String> compressions = new ArrayList<>();
+		for(Compression compression : Compression.getRegistered())
+			compressions.add(compression.getCompressionName().toLowerCase());
+		compressions.add("auto");
+		return compressions.toArray(new String[0]);
+	}
+
+	private ArrayList<Integer> indicesForLength(int length) {
+		ArrayList<Integer> indices = new ArrayList<>();
+		for(int i = 0; i < length; i++) indices.add(i);
+		return indices;
+	}
+
+	public void onUpdateUsedKeyIndex(int newKeyIndex) {
+		NCRConfig.getEncryption().setUsedEncryptionKeyIndex(newKeyIndex);
+	}
+
+	public void updateUsedKeyIndexButton() {
+		if(this.usedEncryptionKeyIndexButton != null) {
+			this.removeWidget(this.usedEncryptionKeyIndexButton);
+		}
+		int initialValue = NCRConfig.getEncryption().getUsedEncryptionKeyIndex();
+		int keyCount = keyField.getValue().split(",").length;
+		if(this.usedEncryptionKeyIndexButton != null) {
+			if(this.usedEncryptionKeyIndexButton.getValue() < keyCount) {
+				initialValue = this.usedEncryptionKeyIndexButton.getValue();
+			}else {
+				initialValue = Math.max(0, keyCount - 1);
+			}
+		}
+
+		int buttonWidth = 128;
+		CycleButton<Integer> cycle = CycleButton.<Integer>builder(value -> {
+					return Component.translatable("gui.nochatreports.encryption_config.encryption_key_index", value);
+				}).withValues(indicesForLength(keyCount))
+				.displayOnlyValue()
+				.withInitialValue(initialValue)
+				.withTooltip(value -> new AdvancedTooltip(
+						Component.literal("You can have multiple keys separated by commas. This index specifies, which key is use for encrypting messages.")).setMaxWidth(250))
+				.create(this.keyField.getX() + this.keyField.getWidth() - buttonWidth, this.keyField.getY() + 24, buttonWidth, 20, CommonComponents.EMPTY,
+						(cycleButton, value) -> {
+							this.unfocusFields();
+						});
+
+		this.addRenderableWidget(this.usedEncryptionKeyIndexButton = cycle);
 	}
 
 	@Override
@@ -178,6 +259,19 @@ public class EncryptionConfigScreen extends Screen {
 		//		if (this.algorithmButton != null && this.algorithmButton.isMouseOver(i, j)) {
 		//			this.renderTooltip(poseStack, this.algorithmButton.getTooltip(), i, j);
 		//		}
+
+		/*
+		if (this.usedEncryptionKeyIndexButton != null && this.usedEncryptionKeyIndexButton.isMouseOver(i, j)) {
+			this.renderTooltip(poseStack, this.usedEncryptionKeyIndexButton.getTooltip(), i, j);
+		}
+
+		if (this.compressionPolicyButton != null && this.compressionPolicyButton.isMouseOver(i, j)) {
+			this.renderTooltip(poseStack, this.compressionPolicyButton.getTooltip(), i, j);
+		}
+
+		if (this.specificCompressionButton != null && this.specificCompressionButton.isMouseOver(i, j)) {
+			this.renderTooltip(poseStack, this.specificCompressionButton.getTooltip(), i, j);
+		}*/
 
 		super.render(poseStack, i, j, f);
 
@@ -215,7 +309,14 @@ public class EncryptionConfigScreen extends Screen {
 		}
 
 		if (!StringUtil.isNullOrEmpty(key)) {
-			this.validationIcon.yTexStart = this.algorithmButton.getValue().validateKey(key) ? 0 : 12;
+			boolean isValid = false;
+			for(String subKey : key.split(",")) {
+				if(this.algorithmButton.getValue().validateKey(subKey)) {
+					isValid = true;
+					break;
+				}
+			}
+			this.validationIcon.yTexStart = isValid ? 0 : 12;
 		} else {
 			this.validationIcon.yTexStart = 0;
 		}
@@ -226,9 +327,15 @@ public class EncryptionConfigScreen extends Screen {
 
 		this.settingPassKey = true;
 		if (!StringUtil.isNullOrEmpty(pass)) {
-			if (encryption.supportsPassphrases()) {
-				this.keyField.setValue(encryption.getPassphraseKey(pass));
+			StringBuilder keyList = new StringBuilder();
+			for(String subPass : pass.split(",")) {
+				if (encryption.supportsPassphrases()) {
+					if(keyList.length() > 0) keyList.append(',');
+					keyList.append(encryption.getPassphraseKey(subPass));
+				}
 			}
+			if(keyList.length() > 0)
+				this.keyField.setValue(keyList.toString());
 		} else {
 			this.onKeyUpdate(this.keyField.getValue());
 		}
@@ -254,10 +361,17 @@ public class EncryptionConfigScreen extends Screen {
 	private void onDone() {
 		var config = NCRConfig.getEncryption();
 		var encryption = this.algorithmButton.getValue();
+		var usedEncryptionKeyIndex = this.usedEncryptionKeyIndexButton.getValue();
+		var compressionPolicy = this.compressionPolicyButton.getValue();
+		var specificCompression = Arrays.stream(Compression.getRegistered()).filter(c -> c.getCompressionName().equalsIgnoreCase(this.specificCompressionButton.getValue())).findFirst().orElse(null);
+
 		config.setAlgorithm(encryption);
 		config.setEncryptionKey(!StringUtil.isNullOrEmpty(this.keyField.getValue()) ? this.keyField.getValue()
 				: encryption.getDefaultKey());
 		config.setEncryptPublic(this.encryptPublicCheck.selected());
+		config.setUsedEncryptionKeyIndex(usedEncryptionKeyIndex);
+		config.setCompressionPolicy(compressionPolicy);
+		config.setSpecificCompression(specificCompression);
 	}
 
 	private boolean hugeGUI() {
