@@ -19,6 +19,7 @@ import com.aizistral.nochatreports.common.gui.AdvancedTooltip;
 import com.aizistral.nochatreports.common.gui.EncryptionButton;
 import com.aizistral.nochatreports.common.gui.EncryptionWarningScreen;
 import com.aizistral.nochatreports.common.gui.GUIShenanigans;
+import com.aizistral.nochatreports.common.gui.TooltipHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -196,7 +197,8 @@ public abstract class MixinChatScreen extends Screen {
 			if (NCRConfig.getEncryption().isValid())
 				return Component.translatable("gui.nochatreports.encryption_tooltip", Language.getInstance()
 						.getOrDefault("gui.nochatreports.encryption_state_" + (NCRConfig.getEncryption()
-								.isEnabledAndValid() ? "on" : "off")));
+								.isEnabledAndValid() ? "on" : "off")),
+						TooltipHelper.getCtrl().withStyle(ChatFormatting.BOLD, ChatFormatting.UNDERLINE));
 			else
 				return Component.translatable("gui.nochatreports.encryption_tooltip_invalid", Language.getInstance()
 						.getOrDefault("gui.nochatreports.encryption_state_" + (NCRConfig.getEncryption()

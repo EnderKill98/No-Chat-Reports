@@ -3,6 +3,7 @@ package com.aizistral.nochatreports.common.core;
 import java.util.Optional;
 
 import com.aizistral.nochatreports.common.compression.Compression;
+import com.aizistral.nochatreports.common.NCRCore;
 import com.aizistral.nochatreports.common.config.NCRConfig;
 import com.aizistral.nochatreports.common.encryption.AESEncryptor;
 import com.aizistral.nochatreports.common.encryption.Encryptor;
@@ -102,7 +103,8 @@ public class EncryptionUtil {
 	public static Optional<String> tryDecrypt(String message, Encryptor<?> encryptor) {
 		try {
 			// Invis2 uses space. Don't split on spaces if other char (\u200c) for invisi2 found.
-			String[] splat = message.contains(" ") && !message.contains("\u200c") ? message.split(" ") : new String[] { message };
+			String messageCopy = message.replace('：', ' ');
+			String[] splat = message.contains(" ") && !messageCopy.contains("\u200c") ? messageCopy.split(" ") : new String[] { message };
 			String decryptable = splat[splat.length-1];
 
 			String decrypted = encryptor.decrypt(decryptable);
