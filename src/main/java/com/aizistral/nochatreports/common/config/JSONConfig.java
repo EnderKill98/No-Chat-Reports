@@ -33,7 +33,7 @@ public abstract class JSONConfig {
 	}
 
 	public void saveFile() {
-		NCRCore.LOGGER.info("Writing config file {}...", this.fileName);
+		NCRCore.LOGGER.debug("Writing config file {}...", this.fileName);
 		writeFile(this.fileName, this);
 	}
 
@@ -44,7 +44,7 @@ public abstract class JSONConfig {
 	public abstract JSONConfig getDefault();
 
 	public static <T extends JSONConfig> T loadConfig(Class<T> configClass, Supplier<T> freshInstance, String fileName) {
-		NCRCore.LOGGER.info("Reading config file {}...", fileName);
+		NCRCore.LOGGER.debug("Reading config file {}...", fileName);
 		T config = readFile(fileName, configClass).orElseGet(freshInstance);
 		config.uponLoad();
 		return config;
@@ -62,8 +62,8 @@ public abstract class JSONConfig {
 			NCRCore.LOGGER.fatal("Could not read config file: {}", file);
 			NCRCore.LOGGER.fatal("This likely indicates the file is corrupted. "
 					+ "You can try deleting it to fix this problem. Full stacktrace below:");
-			ex.printStackTrace();
-			return null;
+			NCRCore.LOGGER.catching(ex);
+			throw new RuntimeException("Could not read config file: " + file, ex);
 		}
 	}
 
@@ -77,7 +77,9 @@ public abstract class JSONConfig {
 			}
 		} catch (Exception ex) {
 			NCRCore.LOGGER.fatal("Could not write config file: {}", file);
-			throw new RuntimeException(ex);
+			NCRCore.LOGGER.fatal("Full stacktrace below:");
+			NCRCore.LOGGER.catching(ex);
+			throw new RuntimeException("Could not write config file: " + file,ex);
 		}
 	}
 

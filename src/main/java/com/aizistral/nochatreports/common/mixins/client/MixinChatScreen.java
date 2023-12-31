@@ -14,11 +14,13 @@ import com.aizistral.nochatreports.common.config.NCRConfig;
 import com.aizistral.nochatreports.common.core.ServerSafetyLevel;
 import com.aizistral.nochatreports.common.core.ServerSafetyState;
 import com.aizistral.nochatreports.common.core.SigningMode;
+import com.aizistral.nochatreports.common.encryption.Encryptor;
 import com.aizistral.nochatreports.common.gui.AdvancedImageButton;
 import com.aizistral.nochatreports.common.gui.AdvancedTooltip;
 import com.aizistral.nochatreports.common.gui.EncryptionButton;
 import com.aizistral.nochatreports.common.gui.EncryptionWarningScreen;
 import com.aizistral.nochatreports.common.gui.GUIShenanigans;
+import com.aizistral.nochatreports.common.gui.SwitchableSprites;
 import com.aizistral.nochatreports.common.gui.TooltipHelper;
 
 import net.minecraft.ChatFormatting;
@@ -31,6 +33,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.FocusNavigationEvent;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -41,15 +44,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This is responsible for adding safety status indicator to the bottom-right corner of chat screen.
+ * This is responsible for adding safety status indicator to the bottom-right
+ * corner of chat screen.
+ * 
  * @author Aizistral
  */
 
 @Mixin(ChatScreen.class)
 public abstract class MixinChatScreen extends Screen {
-	private static final ResourceLocation CHAT_STATUS_ICONS = new ResourceLocation("nochatreports", "textures/gui/chat_status_icons_extended.png");
-	private static final ResourceLocation ENCRYPTION_BUTTON = new ResourceLocation("nochatreports", "textures/gui/encryption_toggle_button.png");
-	private ImageButton safetyStatusButton;
+	private static final int MESSAGE_MAX_LENGTH = 256;
+	private static final ResourceLocation CHAT_STATUS_ICONS = new ResourceLocation("nochatreports",
+			"textures/gui/chat_status_icons_extended.png");
+	private static final ResourceLocation ENCRYPTION_BUTTON = new ResourceLocation("nochatreports",
+			"textures/gui/encryption_toggle_button.png");
+	private AdvancedImageButton safetyStatusButton;
 	@Shadow
 	protected EditBox input;
 
@@ -74,7 +82,8 @@ public abstract class MixinChatScreen extends Screen {
 
 	@Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
 	private void onHandleChatInput(String string, boolean bl, CallbackInfoReturnable<Boolean> info) {
-		if (NCRConfig.getServerPreferences().hasModeCurrent(SigningMode.ALWAYS) && !ServerSafetyState.allowChatSigning()) {
+		if (NCRConfig.getServerPreferences().hasModeCurrent(SigningMode.ALWAYS)
+				&& !ServerSafetyState.allowChatSigning()) {
 			if (this.minecraft.getConnection().getConnection().isEncrypted()) {
 				if (!this.normalizeChatMessage(string).isEmpty()) {
 					ServerSafetyState.updateCurrent(ServerSafetyLevel.INSECURE);
@@ -87,26 +96,41 @@ public abstract class MixinChatScreen extends Screen {
 	}
 
 	@Inject(method = "normalizeChatMessage", at = @At("RETURN"), cancellable = true)
-	public void onBeforeMessage(String original, CallbackInfoReturnable <String> info) {
-		final String[] message = {info.getReturnValue() };
+	public void onBeforeMessage(String original, CallbackInfoReturnable<String> info) {
+		final String[] message = { info.getReturnValue() };
 		NCRConfig.getEncryption().setLastMessage(message[0]);
 
-		if (!message[0].isEmpty() && !Screen.hasControlDown() && NCRConfig.getEncryption().shouldEncrypt(message[0])) {			NCRConfig.getEncryption().getEncryptor().ifPresent(e -> {
-			//replace & color codes with § when it has letter or number after it
-			message[0] = colorCodes(message[0]);
-			int index = NCRConfig.getEncryption().getEncryptionStartIndex(message[0]);
-			String noencrypt = message[0].substring(0, index);
-			String encrypt = message[0].substring(index);
+		if (!message[0].isEmpty() && !Screen.hasControlDown() && NCRConfig.getEncryption().shouldEncrypt(message[0])) {
+			NCRConfig.getEncryption().getEncryptor().ifPresent(e -> {
+				// replace & color codes with § when it has letter or number after it
+				message[0] = colorCodes(message[0]);
+				int index = NCRConfig.getEncryption().getEncryptionStartIndex(message[0]);
+				String noencrypt = message[0].substring(0, index);
+				String encrypt = message[0].substring(index);
 
 				if (encrypt.length() > 0) {
-					if(e instanceof AESEncryptor<?>) {
-						info.setReturnValue(((AESEncryptor<?>) e).encryptAndCompress(noencrypt, encrypt, NCRConfig.getEncryption().getCompressionPolicy(), NCRConfig.getEncryption().getSpecificCompression()));
-					}else {
-						info.setReturnValue(noencrypt + e.encrypt("#%" + encrypt));
-					}
+					info.setReturnValue(getEncrypted(noencrypt, e, encrypt, MESSAGE_MAX_LENGTH));
 				}
 			});
 		}
+	}
+
+	private String getEncrypted(String noencrypt, Encryptor<?> e, String encrypt, int maxLength) {
+		while (encrypt.length() > 0) {
+			String encrypted;
+			if (e instanceof AESEncryptor<?>)
+				encrypted = ((AESEncryptor<?>) e).encryptAndCompress(noencrypt, encrypt,
+						NCRConfig.getEncryption().getCompressionPolicy(),
+						NCRConfig.getEncryption().getSpecificCompression());
+			else
+				encrypted = noencrypt + e.encrypt("#%" + encrypt);
+			if (encrypted.length() <= maxLength)
+				return encrypted;
+
+			encrypt = encrypt.substring(0, encrypt.length() - 1);
+		}
+
+		return "";
 	}
 
 	@Inject(method = "init", at = @At("HEAD"))
@@ -114,8 +138,15 @@ public abstract class MixinChatScreen extends Screen {
 		int buttonX = this.width - 23;
 
 		if (NCRConfig.getClient().showServerSafety() && NCRConfig.getClient().enableMod()) {
-			this.safetyStatusButton = new AdvancedImageButton(buttonX, this.height - 37, 20, 20, this.getXOffset(),
-					0, 20, CHAT_STATUS_ICONS, 128, 128, btn -> {
+			this.safetyStatusButton = new AdvancedImageButton(buttonX, this.height - 37, 20, 20,
+					SwitchableSprites.of(
+							GUIShenanigans.getSprites("safety_state/insecure"),
+							GUIShenanigans.getSprites("safety_state/unintrusive"),
+							GUIShenanigans.getSprites("safety_state/secure"),
+							GUIShenanigans.getSprites("safety_state/realms"),
+							GUIShenanigans.getSprites("safety_state/unknown"),
+							GUIShenanigans.getSprites("safety_state/undefined")).setIndex(this.getSpriteSet()),
+					btn -> {
 						if (!NCRClient.areSigningKeysPresent())
 							return;
 
@@ -179,18 +210,18 @@ public abstract class MixinChatScreen extends Screen {
 		if (!NCRConfig.getEncryption().showEncryptionButton())
 			return;
 
-		int xStart = !NCRConfig.getEncryption().isValid() ? 40 : (NCRConfig.getEncryption().isEnabled() ? 0 : 20);
+		int useSprites = !NCRConfig.getEncryption().isValid() ? 2 : (NCRConfig.getEncryption().isEnabled() ? 0 : 1);
 
-		var button = new EncryptionButton(buttonX, this.height - 37, 20, 20, xStart,
-				0, 20, ENCRYPTION_BUTTON, 64, 64, btn -> {
+		var button = new EncryptionButton(buttonX, this.height - 37, 20, 20, useSprites,
+				btn -> {
 					if (!EncryptionWarningScreen.seenOnThisSession() && !NCRConfig.getEncryption().isWarningDisabled()
 							&& !NCRConfig.getEncryption().isEnabled()) {
 						Minecraft.getInstance().setScreen(new EncryptionWarningScreen(this));
 					} else if (NCRConfig.getEncryption().isValid()) {
 						NCRConfig.getEncryption().toggleEncryption();
-						((EncryptionButton)btn).xTexStart = NCRConfig.getEncryption().isEnabledAndValid() ? 0 : 20;
+						((EncryptionButton) btn).useSprites(NCRConfig.getEncryption().isEnabledAndValid() ? 0 : 1);
 					} else {
-						((EncryptionButton)btn).openEncryptionConfig();
+						((EncryptionButton) btn).openEncryptionConfig();
 					}
 				}, Component.empty(), this);
 		button.setTooltip(new AdvancedTooltip(() -> {
@@ -210,10 +241,10 @@ public abstract class MixinChatScreen extends Screen {
 		this.addRenderableWidget(button);
 	}
 
-	@Inject(method = "tick", at = @At("RETURN"))
-	private void onTick(CallbackInfo info) {
+	@Override
+	public void tick() {
 		if (this.safetyStatusButton != null) {
-			this.safetyStatusButton.xTexStart = this.getXOffset();
+			this.safetyStatusButton.useSprites(this.getSpriteSet());
 		}
 	}
 
@@ -221,23 +252,24 @@ public abstract class MixinChatScreen extends Screen {
 		return ServerSafetyState.getCurrent();
 	}
 
-	private int getXOffset() {
-		return this.getXOffset(this.getSafetyLevel());
+	private int getSpriteSet() {
+		return this.getSpriteSet(this.getSafetyLevel());
 	}
 
-	private int getXOffset(ServerSafetyLevel level) {
+	private int getSpriteSet(ServerSafetyLevel level) {
 		return switch (level) {
-		case SECURE, SINGLEPLAYER -> 21;
-		case UNINTRUSIVE -> 42;
-		case INSECURE -> 0;
-		case REALMS -> 63;
-		case UNKNOWN -> 84;
-		case UNDEFINED -> 105;
+			case INSECURE -> 0;
+			case UNINTRUSIVE -> 1;
+			case SECURE, SINGLEPLAYER -> 2;
+			case REALMS -> 3;
+			case UNKNOWN -> 4;
+			case UNDEFINED -> 5;
 		};
 	}
 
 	@Shadow
 	public abstract String normalizeChatMessage(String string);
+
 	private String colorCodes(String message) {
 		List<String> colors = new ArrayList<>();
 		List<String> specialChars = new ArrayList<>();
@@ -265,11 +297,11 @@ public abstract class MixinChatScreen extends Screen {
 		colors.add("&r");
 		specialChars.add("\\n");
 		specialChars.add("\\r");
-		for (String color: colors) {
+		for (String color : colors) {
 			message = message.replace(color, color.replace("&", "\u00a7"));
 		}
-		for (String specialChar: specialChars) {
-			//replace & with backslash
+		for (String specialChar : specialChars) {
+			// replace & with backslash
 			message = message.replace(specialChar, specialChars(specialChar));
 		}
 

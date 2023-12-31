@@ -1,6 +1,7 @@
 package com.aizistral.nochatreports.common.mixins.client;
 
 import com.aizistral.nochatreports.common.compression.Compression;
+import com.aizistral.nochatreports.fabric.NoChatReports;
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.annotation.Nullable;
 import net.minecraft.network.chat.MutableComponent;
 import org.spongepowered.asm.mixin.Mixin;
@@ -77,7 +78,7 @@ public class MixinChatComponent {
 	private FormattedText modifyGUIMessage(FormattedText msg) {
 		if (NCRConfig.getCommon().enableDebugLog()) {
 			NCRCore.LOGGER.info("Adding chat message, structure: " +
-					Component.Serializer.toStableJson((Component) msg));
+					Component.Serializer.toJson((Component) msg));
 		}
 
 		var decrypted = EncryptionUtil.tryDecryptDetailed((Component) msg);

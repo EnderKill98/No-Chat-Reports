@@ -1,5 +1,6 @@
 package com.aizistral.nochatreports.common.core;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 import com.aizistral.nochatreports.common.compression.Compression;
@@ -12,7 +13,7 @@ import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.annotation.N
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.contents.LiteralContents;
+import net.minecraft.network.chat.contents.PlainTextContents.LiteralContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 
 public class EncryptionUtil {
@@ -32,14 +33,12 @@ public class EncryptionUtil {
 
 	public static Optional<Component> tryDecrypt(Component component) {
 		// Try out all encryptors
-		int index = 0;
 		for(Encryptor<?> encryption : NCRConfig.getEncryption().getAllEncryptors()) {
 			Component copy = recreate(component);
 
 			if(tryDecrypt(copy, encryption)) {
 				return Optional.of(copy);
 			}
-			index++;
 		}
 		return Optional.empty();
 	}
@@ -88,12 +87,29 @@ public class EncryptionUtil {
 				return true;
 			}
 		} else if (component.getContents() instanceof TranslatableContents translatable) {
-			for (Object arg : translatable.args) {
+			boolean didChangeArgs = false;
+			for (int i = 0; i < translatable.args.length; i++) {
+				Object arg = translatable.args[i];
 				if (arg instanceof MutableComponent mutable) {
 					if (tryDecrypt(mutable, encryptor)) {
 						decryptedSiblings = true;
 					}
+				}else if(arg instanceof String argText) {
+					// This can now happen for some reason
+					var decrypted = tryDecrypt(argText, encryptor);
+
+					if (decrypted.isPresent()) {
+						didChangeArgs = true;
+						translatable.args[i] = decrypted.get();
+					}
+
 				}
+			}
+
+			if(didChangeArgs) {
+				// Re-create component as it otherwise caches some aspects of the old args
+				((MutableComponent) component).contents = new TranslatableContents(translatable.getKey(), translatable.getFallback(), translatable.getArgs());
+				return true;
 			}
 		}
 
@@ -119,7 +135,7 @@ public class EncryptionUtil {
 	}
 
 	public static Component recreate(Component component) {
-		return Component.Serializer.fromJson(Component.Serializer.toStableJson(component));
+		return Component.Serializer.fromJson(Component.Serializer.toJson(component));
 	}
 
 }

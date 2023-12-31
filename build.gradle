@@ -78,13 +78,7 @@ dependencies {
 	modApi("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
 		exclude(group: "net.fabricmc.fabric-api")
 	}
-
-	include(fabricApi.module("fabric-api-base", project.fabric_version))
-	modImplementation include(fabricApi.module("fabric-networking-api-v1", project.fabric_version))
-	modImplementation include(fabricApi.module("fabric-screen-api-v1", project.fabric_version))
-	modImplementation include(fabricApi.module("fabric-rendering-v1", project.fabric_version))
-	modImplementation include(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
-
+	
 	// Brotli based compression
 	def brotliVersion = "1.9.0"
 	modCompileOnly include("com.aayushatharva.brotli4j:brotli4j:$brotliVersion")
@@ -115,7 +109,7 @@ processResources {
 	}
 
     from("${rootProject.projectDir}/docs") {
-        include 'changelog.html'
+        include 'CHANGELOG.md'
     }
 	
 	from("${rootProject.projectDir}") {
@@ -157,17 +151,17 @@ curseforge {
         
 		id = "${curse_id}"
         releaseType = "${version_type}"
-        changelogType = 'html'
-        changelog = file('docs/changelog.html')
+        changelogType = 'markdown'
+        changelog = file('docs/CHANGELOG.md')
 		mainArtifact(remapJar)
 		
-		addGameVersion rootProject.minecraft_version
+		addGameVersion project.minecraft_version
 		addGameVersion 'Quilt'
 		addGameVersion 'Fabric'
 		addGameVersion 'Java 17'
 		
 		relations {
-			embeddedLibrary 'fabric-api'
+			requiredDependency 'fabric-api'
 			optionalDependency 'modmenu'
 			optionalDependency 'cloth-config'
 		}
@@ -192,14 +186,14 @@ modrinth {
     versionNumber = "Fabric-" + project.mod_version
 	versionName = "No Chat Reports Fabric-" + project.mod_version
     versionType = "${version_type}"
-	changelog = rootProject.file("docs/changelog.html").text
+	changelog = rootProject.file("docs/CHANGELOG.md").text
     uploadFile = remapJar
     gameVersions = [ project.minecraft_version ]
 	loaders = ['fabric', 'quilt']
 	
 	dependencies {
 		// The scope can be `required`, `optional`, or `incompatible`
-		embedded.project "fabric-api"
+		required.project "fabric-api"
 		optional.project "modmenu"
 		optional.project "cloth-config"
     }
