@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.aizistral.nochatreports.common.config.NCRConfig;
 import com.aizistral.nochatreports.common.core.ServerDataExtension;
 import com.aizistral.nochatreports.common.gui.FontHelper;
+import com.google.common.collect.Lists;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -52,10 +53,10 @@ public abstract class MixinOnlineServerEntry extends ServerSelectionList.Entry {
 			int t = n - k;
 			int u = o - j;
 			if (t >= l - 35 + xOffset && t <= l - 22 + xOffset && u >= 0 + yOffset && u <= 11 + yOffset) {
-				this.screen.setToolTip(FontHelper.wrap(this.minecraft.font, Language.getInstance()
-						.getOrDefault("gui.nochatreports.verified_server"), 250).stream()
+				this.screen.setTooltipForNextRenderPass(Lists.transform(FontHelper.wrap(this.minecraft.font,
+						Language.getInstance().getOrDefault("gui.nochatreports.verified_server"), 250).stream()
 						.map(Component::literal).collect(Collectors.toCollection(() ->
-						new ArrayList<Component>())));
+						new ArrayList<Component>())), Component::getVisualOrderText));
 			}
 		}
 	}

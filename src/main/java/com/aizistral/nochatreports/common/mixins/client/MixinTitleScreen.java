@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.aizistral.nochatreports.common.gui.RealmsWarningScreen;
 import com.mojang.realmsclient.RealmsMainScreen;
 
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.CommonComponents;
@@ -20,8 +21,7 @@ public class MixinTitleScreen extends Screen {
 		throw new IllegalStateException("Can't touch this");
 	}
 
-	@Inject(method = "realmsButtonClicked", at = @At("HEAD"), cancellable = true)
-	private void onRealmsButtonClicked(CallbackInfo info) {
+	@Inject(method = { "realmsButtonClicked", "method_55814", "lambda$createNormalMenuOptions$9" }, at = @At("HEAD"), cancellable = true)	private void onRealmsButtonClicked(CallbackInfo info) {
 		if (RealmsWarningScreen.shouldShow()) {
 			this.minecraft.setScreen(new RealmsWarningScreen(new TitleScreen(), new RealmsMainScreen(this)));
 			info.cancel();

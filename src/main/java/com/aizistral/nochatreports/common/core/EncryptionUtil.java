@@ -10,6 +10,7 @@ import com.aizistral.nochatreports.common.encryption.AESEncryptor;
 import com.aizistral.nochatreports.common.encryption.Encryptor;
 
 import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.annotation.Nullable;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
@@ -94,13 +95,14 @@ public class EncryptionUtil {
 					if (tryDecrypt(mutable, encryptor)) {
 						decryptedSiblings = true;
 					}
-				}else if(arg instanceof String argText) {
+				} else if(arg instanceof String str) {
 					// This can now happen for some reason
-					var decrypted = tryDecrypt(argText, encryptor);
+					var decrypted = tryDecrypt(str, encryptor);
 
 					if (decrypted.isPresent()) {
-						didChangeArgs = true;
 						translatable.args[i] = decrypted.get();
+						decryptedSiblings = true;
+						didChangeArgs = true;
 					}
 
 				}
@@ -135,7 +137,7 @@ public class EncryptionUtil {
 	}
 
 	public static Component recreate(Component component) {
-		return Component.Serializer.fromJson(Component.Serializer.toJson(component));
+		return Component.Serializer.fromJson(Component.Serializer.toJson(component, RegistryAccess.EMPTY), RegistryAccess.EMPTY);
 	}
 
 }

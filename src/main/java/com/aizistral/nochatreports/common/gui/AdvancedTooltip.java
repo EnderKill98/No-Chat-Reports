@@ -137,17 +137,4 @@ public class AdvancedTooltip extends Tooltip {
 		graphics.pose().popPose();
 	}
 
-	@Override
-	public ClientTooltipPositioner createTooltipPositioner(boolean hovered, boolean focused, ScreenRectangle rectangle) {
-		return super.createTooltipPositioner(hovered, focused, rectangle);
-	}
-
-	@Override // ideally tooltip shouldn't control it's own render like this, but for now it does
-	public void refreshTooltipForNextRenderPass(boolean hovered, boolean focused, ScreenRectangle screenRectangle) {
-		if (this.hasCustomRender())
-			return;
-
-		super.refreshTooltipForNextRenderPass(hovered, focused, screenRectangle);
-	}
-
 }

@@ -81,15 +81,14 @@ public abstract class MixinChatScreen extends Screen {
 	}
 
 	@Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
-	private void onHandleChatInput(String string, boolean bl, CallbackInfoReturnable<Boolean> info) {
-		if (NCRConfig.getServerPreferences().hasModeCurrent(SigningMode.ALWAYS)
-				&& !ServerSafetyState.allowChatSigning()) {
+	private void onHandleChatInput(String string, boolean bl, CallbackInfo info) {
+		if (NCRConfig.getServerPreferences().hasModeCurrent(SigningMode.ALWAYS) && !ServerSafetyState.allowChatSigning()) {
 			if (this.minecraft.getConnection().getConnection().isEncrypted()) {
 				if (!this.normalizeChatMessage(string).isEmpty()) {
 					ServerSafetyState.updateCurrent(ServerSafetyLevel.INSECURE);
 					ServerSafetyState.scheduleSigningAction(NCRClient::resendLastChatMessage);
 					ServerSafetyState.setAllowChatSigning(true);
-					info.setReturnValue(true);
+					info.cancel();
 				}
 			}
 		}

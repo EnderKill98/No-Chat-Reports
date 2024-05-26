@@ -23,8 +23,10 @@ import com.aizistral.nochatreports.common.gui.UnsafeServerScreen;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.chat.ChatListener;
 import net.minecraft.client.multiplayer.chat.ChatTrustLevel;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.PlayerChatMessage;
@@ -63,8 +65,10 @@ public class MixinChatListener {
 				}
 
 				if (NCRConfig.getServerPreferences().hasModeCurrent(SigningMode.PROMPT)) {
-					Minecraft.getInstance().setScreen(new UnsafeServerScreen(Minecraft.getInstance().screen
-							instanceof ChatScreen chat ? chat : new ChatScreen("")));
+					Screen returnScreen = Minecraft.getInstance().screen instanceof ChatScreen chat ? chat
+							: new ChatScreen("");
+					Screen unsafeScreen = new UnsafeServerScreen(returnScreen);
+					Minecraft.getInstance().setScreen(unsafeScreen);
 
 					if (NCRConfig.getClient().hideSigningRequestMessage()) {
 						info.cancel();
@@ -102,7 +106,7 @@ public class MixinChatListener {
 		// Debug never dies
 		if (NCRConfig.getCommon().enableDebugLog()) {
 			NCRCore.LOGGER.info("Received message: {}, from: {}, signature: {}",
-					Component.Serializer.toJson(playerChatMessage.unsignedContent()),
+					Component.Serializer.toJson(playerChatMessage.decoratedContent(), RegistryAccess.EMPTY),
 					playerChatMessage.link().sender(),
 					Base64.getEncoder().encodeToString(playerChatMessage.signature() != null ? playerChatMessage.signature().bytes() : new byte[0]));
 		}

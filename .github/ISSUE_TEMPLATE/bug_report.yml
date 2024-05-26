@@ -11,6 +11,7 @@ body:
       label: Modloader
       options:
         - Forge
+        - NeoForge
         - Fabric
         - Quilt
     validations:

@@ -1,3 +1,18 @@
+#### **\[Build 1.20.6-v2.7.0\]:**
+
+- Initial port to 1.20.6 (but should work for 1.20.5 too).
+
+#### **\[Build 1.20.4-v2.6.1\]:**
+
+- Fixed startup crash on dedicated servers with NeoForge ([#473](https://github.com/Aizistral-Studios/No-Chat-Reports/issues/473)).
+
+#### **\[Build 1.20.4-v2.6.0\]:**
+
+- Added support for NeoForge ([big thanks to embeddedt, #464](https://github.com/Aizistral-Studios/No-Chat-Reports/pull/464));
+- Fabric version of the mod no longer bundles required Fabric API modules, instead simply requiring the entire Fabric API to be separately installed;
+- Replaced "Ctrl" with OS-dependent control key in various localizations ([thanks IlyaYezerovsky, #468](https://github.com/Aizistral-Studios/No-Chat-Reports/pull/468));
+- Updated Russian translation ([thanks mpustovoi, #457](https://github.com/Aizistral-Studios/No-Chat-Reports/pull/457)).
+
 #### **\[Build 1.20.4-v2.5.0\]:**
 
 - Initial 1.20.4 port.

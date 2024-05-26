@@ -6,6 +6,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
@@ -42,10 +43,19 @@ public class AdvancedImageButton extends ImageButton {
 		graphics.blitSprite(this.getCurrentTexture(), this.getX(), this.getY(), this.width, this.height);
 
 		if (this.isHovered)
-			if (this.tooltip instanceof AdvancedTooltip tooltip && tooltip.hasCustomRender()) {
-				tooltip.doCustomRender(this.parent, graphics, mouseX, mouseY, tooltip.createTooltipPositioner(
-						this.isHovered(), this.isFocused(), this.getRectangle()));
+			if (this.tooltip instanceof AdvancedWidgetTooltipHolder holder && holder.hasCustomRender()) {
+				holder.doCustomRender(this.parent, graphics, mouseX, mouseY, holder.createTooltipPositioner(
+						this.getRectangle(), this.isHovered(), this.isFocused()));
 			}
+	}
+
+	@Override
+	public void setTooltip(Tooltip tooltip) {
+		if (tooltip instanceof AdvancedTooltip) {
+			this.tooltip = new AdvancedWidgetTooltipHolder();
+		}
+
+		super.setTooltip(tooltip);
 	}
 
 }

@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        java: [ 17 ]
+        java: [ 21 ]
         os: [ubuntu-22.04, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
@@ -29,7 +29,7 @@ jobs:
       - name: Build the mod
         run: ./gradlew build
       - name: Upload build artifacts
-        if: ${{ runner.os == 'Linux' && matrix.java == '17' }} # Only upload artifacts from one OS and required JDK.
+        if: ${{ runner.os == 'Linux' && matrix.java == '21' }} # Only upload artifacts from one OS and required JDK.
         uses: actions/upload-artifact@v3
         with:
           name: Artifacts

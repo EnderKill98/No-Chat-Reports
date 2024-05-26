@@ -1,0 +1,19 @@
+license="WTFPL"
+modLoader="javafml"
+loaderVersion="[1,)"
+
+[[mods]]
+modId="nochatreports"
+version="1.0.0"
+displayName="No Chat Reports"
+authors="Aizistral"
+logoFile="ncr_logo.png"
+description='''
+None
+'''
+
+[[mixins]]
+config="mixins/common/nochatreports.mixins.json"
+
+[[mixins]]
+config="mixins/neoforge/nochatreports-neoforge.mixins.json"

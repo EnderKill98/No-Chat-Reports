@@ -1,0 +1,235 @@
+buildscript {
+    repositories {
+        mavenCentral()
+		maven { url "file:///${project.projectDir}/deps/" }
+        maven { url 'https://plugins.gradle.org/m2/' }
+		maven {
+			name "Gradle Plugin Portal"
+			url 'https://plugins.gradle.org/m2/'
+			content { 
+				includeGroup "gradle.plugin.com.matthewprenger"
+				includeGroup "com.modrinth"
+			}
+		}
+    }
+    dependencies {
+		classpath 'gradle.plugin.com.matthewprenger:CurseGradle:1.4.0'
+    }
+}
+
+plugins {
+	id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id "com.modrinth.minotaur" version "2.+"
+    id 'net.neoforged.gradle.userdev' version '7.0.109'
+}
+
+println("Applying plugins...")
+
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven-publish'
+apply plugin: 'com.matthewprenger.cursegradle'
+
+apply from: '../common.gradle'
+
+println("Specifying project version/group/archivesBaseName...")
+version = "${mod_version}"
+group = "${maven_group}"
+archivesBaseName = "${archives_base_name}"
+
+println("Specifying Java compatibility...")
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+println("Java Installation Data:")
+println(" - Java Version: " + System.getProperty('java.version'))
+println(" - JVM Version: " + System.getProperty('java.vm.version'))
+println(" - Vendor: " + System.getProperty('java.vendor'))
+println(" - OS Archetype: " + System.getProperty('os.arch'))
+
+compileJava.options.encoding = "UTF-8"
+
+println("Specifying Access Transformer configuration...")
+
+minecraft.accessTransformers.file project.file('src/main/resources/META-INF/accesstransformer.cfg')
+
+runs {
+    client {
+        systemProperty 'org.gradle.jvmargs', '-Xms4G -Xmx4G'
+        systemProperty 'fml.earlyprogresswindow', 'false'
+        systemProperty 'mixin.env.disableRefMap', 'true'
+        workingDirectory project.file('run')
+
+        systemProperty 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+        systemProperty 'forge.logging.console.level', 'debug'
+
+        modSource project.sourceSets.main
+    }
+
+    server {
+        systemProperty 'mixin.env.disableRefMap', 'true'
+        workingDirectory project.file('run')
+
+        systemProperty 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+        systemProperty 'forge.logging.console.level', 'debug'
+
+        modSource project.sourceSets.main
+    }
+}
+
+sourceSets.main.resources {
+    // NO-OP
+}
+
+configurations {
+    runtimeClasspath.extendsFrom localRuntime
+}
+
+repositories {
+	println("Specifying repositories...")	
+	maven {  url "file:///${project.projectDir}/deps/"    } // local
+	maven {  url = "https://maven.theillusivec4.top/"     } // curios
+	maven {  url = "https://maven.blamejared.com/"        } // patchouli
+	maven {  url = "https://repo.spongepowered.org/maven" } // mixin
+	maven {  url "https://maven.shedaniel.me/"            } // cloth config
+}
+
+dependencies {
+	println("Processing dependencies...")	
+
+	// Minecraft & Forge
+    implementation "net.neoforged:neoforge:${neoforge_version}"
+	implementation "generic:modmenu:5.0.2"
+	implementation "generic:fabric-annotations:v1.0.0"
+	implementation "generic:cloth-config-api:14.0.126"
+}
+
+
+jar {
+	println("Processing manifest...")	
+
+    manifest {
+        attributes([
+            "Specification-Title": "${mod_name}",
+            "Specification-Vendor": "${mod_author}",
+            "Specification-Version": "${version}",
+            "Implementation-Title": "${mod_name}",
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor" :"${mod_author}",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+        ])
+    }
+}
+
+processResources {
+	println("Processing resources...")
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	exclude 'META-INF/neoforge.mods.toml'
+
+    from("${project.projectDir}/docs/META-INF") {
+		println("Inflating neoforge.mods.toml...")	
+	
+		// Replace properties in mods.toml with ones derived from settings.gradle
+        include 'neoforge.mods.toml'
+        expand 'mod_license': mod_license, 
+		'mod_version': version, 
+		'mod_id' : mod_id, 
+		'mod_name': mod_name, 
+		'mod_url': mod_url, 
+		'mod_author': mod_author, 
+		'mod_icon': mod_icon, 
+		'mod_description': mod_description,
+		'issue_tracker_url': issue_tracker_url,
+		'dep_neoforge': dep_neoforge,
+		'dep_minecraft': dep_minecraft,
+		'contributor_0': contributor_0
+		into 'META-INF'
+    }
+
+    from("${rootProject.projectDir}/docs") {
+        include 'CHANGELOG.md'
+    }
+	
+	from("${rootProject.projectDir}") {
+        include 'LICENSE'
+	}
+}
+
+curseforge {
+
+    project {
+		println("Pushing CurseGradle specifications for project ID: ${curse_id}")	
+	
+		// Specified as cmd argument
+        apiKey = findProperty('curseKey') ?: 'none'
+        
+		id = "${curse_id}"
+        releaseType = "${version_type}"
+        changelogType = 'markdown'
+        changelog = rootProject.file('docs/CHANGELOG.md')
+		
+		addGameVersion project.minecraft_version
+		addGameVersion "1.20.5"
+		addGameVersion "Java 21"
+		addGameVersion "NeoForge"
+		
+        //addArtifact(sourcesJar)
+        //addArtifact(apiJar)
+    }
+}
+
+modrinth {
+    token = findProperty('modrinthKey') ?: 'none'
+    projectId = "no-chat-reports"
+    versionNumber = "NeoForge-" + project.version
+	versionName = "No Chat Reports NeoForge-" + project.version
+    versionType = "${version_type}"
+	changelog = rootProject.file("docs/CHANGELOG.md").text
+    uploadFile = jar
+    gameVersions = [ project.minecraft_version, "1.20.5" ]
+	
+	syncBodyFrom = rootProject.file("docs/README.md").text
+}
+
+task upload {
+	dependsOn('modrinth')
+	dependsOn('curseforge')
+}
+
+
+task updateResources() {
+    // NO-OP
+}
+
+tasks.updateResources.dependsOn processResources
+
+//tasks.withType(JavaCompile) {
+//    options.failOnError(true)
+//}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+// IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+
+publishing {
+
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file:///${project.projectDir}/mcmodsrepo"
+        }
+    }
+}

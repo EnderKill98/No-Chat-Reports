@@ -1,14 +1,11 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-	id 'fabric-loom' version '1.1-SNAPSHOT'
+	id 'fabric-loom' version '1.6-SNAPSHOT'
 	id 'maven-publish'
 	id "com.modrinth.minotaur" version "2.+"
 	id "com.matthewprenger.cursegradle" version "1.+"
 }
-
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
@@ -17,15 +14,15 @@ group = project.maven_group
 apply from: 'common.gradle'
 
 def createLink(source, target) {
-	if (new File(target).exists()) {
+	if (new File(rootProject.projectDir, target).exists()) {
 		println("Target ${target} already exists, skipping symbolic link creation")
 		return
 	}
 	
 	try {
 		exec {
-			source = new File(projectDir, source).getCanonicalPath()
-			target = new File(projectDir, target).getCanonicalPath()
+			source = new File(rootProject.projectDir, source).getCanonicalPath()
+			target = new File(rootProject.projectDir, target).getCanonicalPath()
 			new File(target).getParentFile().mkdirs()
 			
 			if (Os.isFamily(Os.FAMILY_WINDOWS)) {
@@ -43,16 +40,32 @@ def createLink(source, target) {
 
 def setupLinks() {
 	println("Setting up symbolic links...")
-	createLink("./src/main/java/com/aizistral/nochatreports/common", "./forge/src/main/java/com/aizistral/nochatreports/common")
-	createLink("./src/main/resources/assets", "./forge/src/main/resources/assets")
-	createLink("./src/main/resources/mixins/common", "./forge/src/main/resources/mixins/common")
-	
-	if (!new File("./forge/src/main/java/com/aizistral/nochatreports/common/platform/PlatformProvider.java").exists()) {
-		throw new IllegalStateException("No PlatformProvider found :/")
+
+	for(platform in ["forge", "neoforge"]) {
+		createLink("./src/main/java/com/aizistral/nochatreports/common", "./${platform}/src/main/java/com/aizistral/nochatreports/common")
+		createLink("./src/main/resources/assets", "./${platform}/src/main/resources/assets")
+		createLink("./src/main/resources/mixins/common", "./${platform}/src/main/resources/mixins/common")
+
+		if (!new File("./${platform}/src/main/java/com/aizistral/nochatreports/common/platform/PlatformProvider.java").exists()) {
+			throw new IllegalStateException("No PlatformProvider found :/")
+		}
 	}
+
+	createLink("./forge/deps", "./neoforge/deps")
 }
 
 setupLinks()
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+}
+
+java {
+	// withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
 
 loom {
 	accessWidenerPath = file("src/main/resources/nochatreports.accesswidener")
@@ -89,8 +102,6 @@ dependencies {
 	modRuntimeOnly include("com.aayushatharva.brotli4j:native-osx-aarch64:$brotliVersion")
 }
 
-sourceSets.remove(sourceSets.test)
-
 processResources {
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 	inputs.property "version", project.version
@@ -118,7 +129,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 17
+	it.options.release = 21
 }
 
 java {
@@ -156,9 +167,10 @@ curseforge {
 		mainArtifact(remapJar)
 		
 		addGameVersion project.minecraft_version
+		addGameVersion "1.20.5"
 		addGameVersion 'Quilt'
 		addGameVersion 'Fabric'
-		addGameVersion 'Java 17'
+		addGameVersion 'Java 21'
 		
 		relations {
 			requiredDependency 'fabric-api'
@@ -188,7 +200,7 @@ modrinth {
     versionType = "${version_type}"
 	changelog = rootProject.file("docs/CHANGELOG.md").text
     uploadFile = remapJar
-    gameVersions = [ project.minecraft_version ]
+    gameVersions = [ project.minecraft_version, "1.20.5" ]
 	loaders = ['fabric', 'quilt']
 	
 	dependencies {
