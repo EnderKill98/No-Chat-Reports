@@ -53,10 +53,8 @@ import java.util.List;
 @Mixin(ChatScreen.class)
 public abstract class MixinChatScreen extends Screen {
 	private static final int MESSAGE_MAX_LENGTH = 256;
-	private static final ResourceLocation CHAT_STATUS_ICONS = new ResourceLocation("nochatreports",
-			"textures/gui/chat_status_icons_extended.png");
-	private static final ResourceLocation ENCRYPTION_BUTTON = new ResourceLocation("nochatreports",
-			"textures/gui/encryption_toggle_button.png");
+	private static final ResourceLocation CHAT_STATUS_ICONS = ResourceLocation.fromNamespaceAndPath("nochatreports", "textures/gui/chat_status_icons_extended.png");
+	private static final ResourceLocation ENCRYPTION_BUTTON = ResourceLocation.fromNamespaceAndPath("nochatreports", "textures/gui/encryption_toggle_button.png");
 	private AdvancedImageButton safetyStatusButton;
 	@Shadow
 	protected EditBox input;

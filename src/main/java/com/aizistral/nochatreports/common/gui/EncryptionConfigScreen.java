@@ -32,18 +32,12 @@ import net.minecraft.util.StringUtil;
 public class EncryptionConfigScreen extends Screen {
 	private static final Component HEADER = Component.translatable("gui.nochatreports.encryption_config.header");
 	private static final Component KEY_DESC = Component.translatable("gui.nochatreports.encryption_config.key_desc");
-	private static final Component PASS_DESC = Component
-			.translatable("gui.nochatreports.encryption_config.passphrase_desc");
-	private static final Component VALIDATION_OK = Component
-			.translatable("gui.nochatreports.encryption_config.validation_ok");
-	private static final Component VALIDATION_FAILED = Component
-			.translatable("gui.nochatreports.encryption_config.validation_failed");
-	private static final Component DICE_TOOLTIP = Component
-			.translatable("gui.nochatreports.encryption_config.dice_tooltip");
-	private static final Component PASS_NOT_ALLOWED = Component
-			.translatable("gui.nochatreports.encryption_config.pass_not_allowed");
-	private static final Component ENCRYPT_PUBLIC = Component
-			.translatable("gui.nochatreports.encryption_config.encrypt_public");
+	private static final Component PASS_DESC = Component.translatable("gui.nochatreports.encryption_config.passphrase_desc");
+	private static final Component VALIDATION_OK = Component.translatable("gui.nochatreports.encryption_config.validation_ok");
+	private static final Component VALIDATION_FAILED = Component.translatable("gui.nochatreports.encryption_config.validation_failed");
+	private static final Component DICE_TOOLTIP = Component.translatable("gui.nochatreports.encryption_config.dice_tooltip");
+	private static final Component PASS_NOT_ALLOWED = Component.translatable("gui.nochatreports.encryption_config.pass_not_allowed");
+	private static final Component ENCRYPT_PUBLIC = Component.translatable("gui.nochatreports.encryption_config.encrypt_public");
 	private static final ResourceLocation CROSSMARK = new ResourceLocation("nochatreports", "encryption/crossmark_big");
 
 	private static final int FIELDS_Y_START = 45;

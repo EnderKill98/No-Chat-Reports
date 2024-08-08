@@ -1,5 +1,5 @@
 accessWidener v1 named
-accessible field net/minecraft/client/gui/screens/SimpleOptionsSubScreen list Lnet/minecraft/client/gui/components/OptionsList;
+accessible field net/minecraft/client/gui/screens/options/OptionsSubScreen list Lnet/minecraft/client/gui/components/OptionsList;
 accessible field net/minecraft/network/chat/contents/TranslatableContents args [Ljava/lang/Object;
 mutable field net/minecraft/network/chat/contents/TranslatableContents args [Ljava/lang/Object;
 accessible field net/minecraft/network/chat/MutableComponent contents Lnet/minecraft/network/chat/ComponentContents;
@@ -18,7 +18,7 @@ accessible field net/minecraft/client/gui/screens/Screen font Lnet/minecraft/cli
 #accessible field net/minecraft/client/gui/components/AbstractWidget tooltipMsDelay I
 #accessible method net/minecraft/client/gui/components/AbstractWidget updateTooltip ()V
 #extendable method net/minecraft/client/gui/components/AbstractWidget updateTooltip ()V
-accessible field net/minecraft/client/gui/screens/OptionsScreen TELEMETRY Lnet/minecraft/network/chat/Component;
+accessible field net/minecraft/client/gui/screens/options/OptionsScreen TELEMETRY Lnet/minecraft/network/chat/Component;
 
 accessible method net/minecraft/client/gui/components/AbstractWidget render (Lnet/minecraft/client/gui/GuiGraphics;IIF)V
 extendable method net/minecraft/client/gui/components/AbstractWidget render (Lnet/minecraft/client/gui/GuiGraphics;IIF)V

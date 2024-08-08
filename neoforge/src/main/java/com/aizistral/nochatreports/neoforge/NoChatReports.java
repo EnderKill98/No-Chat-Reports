@@ -45,20 +45,14 @@ public class NoChatReports implements PlatformProvider {
 		return FMLPaths.CONFIGDIR.get();
 	}
 	
-	@EventBusSubscriber(modid = "nochatreports", bus = Bus.GAME)
+	@EventBusSubscriber(modid = "nochatreports", bus = Bus.GAME, value = Dist.CLIENT)
 	public static class Events {
 		
 		@SubscribeEvent
-		@OnlyIn(Dist.CLIENT)
 		public static void onPlayReady(ClientPlayerNetworkEvent.LoggingIn event) {
 			Minecraft client = Minecraft.getInstance();
 			ClientPacketListener handler = client.getConnection();
 			ClientEvents.PLAY_READY.invoker().handle(handler, client);
-		}
-		
-		@SubscribeEvent
-		public static void onServerStarted(ServerStartedEvent event) {
-			// NO-OP, see https://github.com/Aizistral-Studios/No-Chat-Reports/issues/473
 		}
 		
 	}

@@ -28,7 +28,7 @@ import net.minecraft.resources.ResourceLocation;
 
 @Mixin(ServerSelectionList.OnlineServerEntry.class)
 public abstract class MixinOnlineServerEntry extends ServerSelectionList.Entry {
-	private static final ResourceLocation VERIFIED_ICON = new ResourceLocation("nochatreports", "verified_server");
+	private static final ResourceLocation VERIFIED_ICON = ResourceLocation.fromNamespaceAndPath("nochatreports", "verified_server");
 
 	@Shadow @Final
 	private JoinMultiplayerScreen screen;

@@ -20,7 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 
 @Mixin(GuiMessageTag.Icon.class)
 public abstract class MixinGuiMessageTagIcon {
-	private static final ResourceLocation TEXTURE_NCR = new ResourceLocation("nochatreports", "encryption/encrypted_tag");
+	private static final ResourceLocation TEXTURE_NCR = ResourceLocation.fromNamespaceAndPath("nochatreports", "encryption/encrypted_tag");
 	@Shadow(aliases = "field_39768") @Mutable static Icon[] $VALUES;
 
 	@Invoker("<init>")

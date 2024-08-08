@@ -1,3 +1,11 @@
+#### **\[Build 1.21-v2.8.0\]:**
+
+- Initial 1.21 port.
+
+#### **\[Build 1.20.6-v2.7.1\]:**
+
+- Added Mexican Spanish translation ([thanks TheLegendofSaram, #474](https://github.com/Aizistral-Studios/No-Chat-Reports/pull/474)).
+
 #### **\[Build 1.20.6-v2.7.0\]:**
 
 - Initial port to 1.20.6 (but should work for 1.20.5 too).
