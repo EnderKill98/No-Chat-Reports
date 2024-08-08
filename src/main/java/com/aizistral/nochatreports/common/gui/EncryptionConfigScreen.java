@@ -38,7 +38,7 @@ public class EncryptionConfigScreen extends Screen {
 	private static final Component DICE_TOOLTIP = Component.translatable("gui.nochatreports.encryption_config.dice_tooltip");
 	private static final Component PASS_NOT_ALLOWED = Component.translatable("gui.nochatreports.encryption_config.pass_not_allowed");
 	private static final Component ENCRYPT_PUBLIC = Component.translatable("gui.nochatreports.encryption_config.encrypt_public");
-	private static final ResourceLocation CROSSMARK = new ResourceLocation("nochatreports", "encryption/crossmark_big");
+	private static final ResourceLocation CROSSMARK = ResourceLocation.fromNamespaceAndPath("nochatreports", "encryption/crossmark_big");
 
 	private static final int FIELDS_Y_START = 45;
 	private final Screen previous;
